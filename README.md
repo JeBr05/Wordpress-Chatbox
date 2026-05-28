@@ -11,8 +11,9 @@ Jeroen's Chatbox is a WordPress plugin that lets site owners build a chatbox fro
 5. Control visibility for home page, pages, posts, archives and mobile.
 6. Exclude specific page IDs or URL paths.
 7. Change the chatbox name, welcome message, button text, color and position.
-8. Protect usage with nonces, rate limits and a daily token budget.
-9. View analytics and recent messages when logging is enabled.
+8. Select English, Dutch, German or French for the chatbox interface and AI answer rule.
+9. Protect usage with nonces, rate limits and a daily token budget.
+10. View analytics and recent messages when logging is enabled.
 
 ## Installation
 
@@ -51,9 +52,13 @@ git init
 git add .
 git commit -m "Initial Jeroen's Chatbox plugin"
 git branch -M main
-git remote add origin git@github.com:your-name/jeroens-chatbox.git
+git remote add origin git@github.com:JeBr05/Wordpress-Chatbox.git
 git push -u origin main
 ```
+
+## Languages
+
+Open Chatbox or Settings to select English, Dutch, German or French. The setting changes the front end labels and adds an answer language rule to the AI instructions.
 
 ## Notes
 

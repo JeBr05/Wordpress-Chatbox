@@ -288,7 +288,7 @@ class JCB_REST_Controller {
 
 		$answer = JCB_OpenAI_Client::output_text( $result );
 		if ( '' === $answer ) {
-			$answer = __( 'I could not create an answer right now.', 'jeroens-chatbox' );
+			$answer = JCB_Language::text( 'error_answer', (string) ( $options['plugin_language'] ?? 'en' ) );
 		}
 
 		$latency = (int) round( ( microtime( true ) - $started ) * 1000 );
@@ -322,6 +322,7 @@ class JCB_REST_Controller {
 		$instructions  = $options['instructions'];
 		$instructions .= "\n\nRules:\n";
 		$instructions .= 'Use the website knowledge base when available. Do not invent page content. Keep answers practical. If sources are requested, mention the relevant page titles or URLs found in the knowledge base.';
+		$instructions .= "\n" . JCB_Language::response_rule( (string) ( $options['plugin_language'] ?? 'en' ) );
 		if ( $page ) {
 			$instructions .= "\nThe visitor is currently on: " . $page;
 		}

@@ -6,9 +6,9 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Jeroen's Chatbox
- * Plugin URI:        https://github.com/your-name/jeroens-chatbox
+ * Plugin URI:        https://github.com/JeBr05/Wordpress-Chatbox
  * Description:       Build a site-aware chatbox from selected WordPress content using an OpenAI API key and vector store.
- * Version:           0.3.0
+ * Version:           0.4.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Open Source Contributors
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'JCB_VERSION', '0.3.0' );
+define( 'JCB_VERSION', '0.4.0' );
 define( 'JCB_PLUGIN_FILE', __FILE__ );
 define( 'JCB_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'JCB_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

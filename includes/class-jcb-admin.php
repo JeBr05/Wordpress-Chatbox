@@ -45,6 +45,7 @@ class JCB_Admin {
 			'nonce'     => wp_create_nonce( 'wp_rest' ),
 			'settings'  => JCB_Options::safe_for_admin(),
 			'shortcode' => '[jeroens_chatbox]',
+			'languages' => JCB_Language::admin_options(),
 		);
 		wp_add_inline_script( 'jcb-admin', 'window.JCB_ADMIN = ' . wp_json_encode( $config ) . ';', 'before' );
 	}

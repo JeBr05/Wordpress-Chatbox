@@ -72,6 +72,7 @@ class JCB_Activator {
 			}
 			$defaults = array(
 				'version'                   => JCB_VERSION,
+				'plugin_language'           => 'en',
 				'assistant_name'            => "Jeroen's Chatbox",
 				'model'                     => 'gpt-4.1-mini',
 				'instructions'              => 'Answer questions using the selected website knowledge base. Be clear, helpful and honest. If the answer is not in the knowledge base, say that you do not know based on the available site content.',

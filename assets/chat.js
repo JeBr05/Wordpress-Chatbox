@@ -28,23 +28,23 @@
   };
 
 
-  const createSources = (sources) => {
+  const createSources = (sources, strings) => {
     if (!Array.isArray(sources) || !sources.length) return null;
     const wrap = document.createElement('div');
     wrap.className = 'jcb-chat-sources';
     const items = sources.map((source) => {
-      const title = escapeHtml(source.title || 'Source');
+      const title = escapeHtml(source.title || strings.source || 'Source');
       const url = source.url ? escapeHtml(source.url) : '';
       return url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>` : `<span>${title}</span>`;
     }).join('');
-    wrap.innerHTML = `<div>Sources</div>${items}`;
+    wrap.innerHTML = `<div>${escapeHtml(strings.sources || 'Sources')}</div>${items}`;
     return wrap;
   };
 
-  const createFeedback = (config) => {
+  const createFeedback = (config, strings) => {
     const wrap = document.createElement('div');
     wrap.className = 'jcb-chat-feedback';
-    wrap.innerHTML = '<button type="button" data-rating="up">Helpful</button><button type="button" data-rating="down">Not helpful</button>';
+    wrap.innerHTML = `<button type="button" data-rating="up">${escapeHtml(strings.helpful || 'Helpful')}</button><button type="button" data-rating="down">${escapeHtml(strings.notHelpful || 'Not helpful')}</button>`;
     wrap.addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-rating]');
       if (!button) return;
@@ -55,7 +55,7 @@
           headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': config.nonce },
           body: JSON.stringify({ sessionId: sessionId(), rating: button.dataset.rating }),
         });
-        wrap.innerHTML = '<span>Thanks for your feedback.</span>';
+        wrap.innerHTML = `<span>${escapeHtml(strings.feedbackThanks || 'Thanks for your feedback.')}</span>`;
       } catch (error) {
         button.disabled = false;
       }
@@ -66,6 +66,19 @@
   const init = (root) => {
     const inlineConfig = root.dataset.config ? JSON.parse(root.dataset.config) : {};
     const config = { ...(window.JCB_CHAT || {}), ...inlineConfig };
+    const strings = {
+      send: 'Send',
+      close: 'Close',
+      typing: 'Typing...',
+      sources: 'Sources',
+      source: 'Source',
+      helpful: 'Helpful',
+      notHelpful: 'Not helpful',
+      feedbackThanks: 'Thanks for your feedback.',
+      errorAnswer: 'The chatbox could not answer right now.',
+      noAnswer: 'No answer returned.',
+      ...(config.strings || {}),
+    };
     root.style.setProperty('--jcb-chat-accent', config.accentColor || '#6f5bd6');
     root.style.setProperty('--jcb-chat-z-index', String(config.zIndex || 99999));
     root.dataset.position = config.position || 'right';
@@ -75,12 +88,12 @@
       <section class="jcb-chat-window" hidden aria-live="polite">
         <header class="jcb-chat-header">
           <div class="jcb-chat-title">${escapeHtml(config.assistantName || "Jeroen's Chatbox")}</div>
-          <button class="jcb-chat-close" type="button" aria-label="Close">×</button>
+          <button class="jcb-chat-close" type="button" aria-label="${escapeHtml(strings.close)}">×</button>
         </header>
         <div class="jcb-chat-messages"></div>
         <form class="jcb-chat-form">
           <input class="jcb-chat-input" type="text" autocomplete="off" placeholder="${escapeHtml(config.placeholder || 'Ask a question...')}">
-          <button class="jcb-chat-send" type="submit">Send</button>
+          <button class="jcb-chat-send" type="submit">${escapeHtml(strings.send)}</button>
         </form>
       </section>
     `;
@@ -113,7 +126,7 @@
       if (!message) return;
       input.value = '';
       messages.appendChild(createMessage('user', message));
-      const typing = createMessage('assistant', 'Typing...');
+      const typing = createMessage('assistant', strings.typing || 'Typing...');
       messages.appendChild(typing);
       messages.scrollTop = messages.scrollHeight;
       send.disabled = true;
@@ -128,11 +141,11 @@
           }),
         });
         const json = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(json.message || 'The chatbox could not answer right now.');
-        typing.innerHTML = escapeHtml(json.answer || 'No answer returned.');
-        const sources = createSources(json.sources || []);
+        if (!response.ok) throw new Error(json.message || strings.errorAnswer || 'The chatbox could not answer right now.');
+        typing.innerHTML = escapeHtml(json.answer || strings.noAnswer || 'No answer returned.');
+        const sources = createSources(json.sources || [], strings);
         if (sources) messages.appendChild(sources);
-        messages.appendChild(createFeedback(config));
+        messages.appendChild(createFeedback(config, strings));
       } catch (error) {
         typing.innerHTML = escapeHtml(error.message);
       } finally {

@@ -72,7 +72,10 @@ class JCB_Options {
 	 */
 	public static function public_config(): array {
 		$options = self::all();
+		$language = JCB_Language::normalize( (string) ( $options['plugin_language'] ?? 'en' ) );
 		return array(
+			'language'       => $language,
+			'strings'        => JCB_Language::front_end_strings( $language ),
 			'assistantName'  => $options['assistant_name'],
 			'welcomeMessage' => $options['welcome_message'],
 			'placeholder'    => $options['placeholder'],
@@ -93,14 +96,15 @@ class JCB_Options {
 	public static function defaults(): array {
 		return array(
 			'version'                  => JCB_VERSION,
+			'plugin_language'          => 'en',
 			'assistant_name'           => "Jeroen's Chatbox",
 			'model'                    => 'gpt-4.1-mini',
-			'instructions'             => 'Answer questions using the selected website knowledge base. Be clear, helpful and honest. If the answer is not in the knowledge base, say that you do not know based on the available site content.',
-			'welcome_message'          => 'Hi. How can I help you?',
-			'placeholder'              => 'Ask a question...',
+			'instructions'             => JCB_Language::text( 'instructions', 'en' ),
+			'welcome_message'          => JCB_Language::text( 'welcome_message', 'en' ),
+			'placeholder'              => JCB_Language::text( 'placeholder', 'en' ),
 			'accent_color'             => '#6f5bd6',
 			'launcher_position'        => 'right',
-			'launcher_label'           => 'Chat',
+			'launcher_label'           => JCB_Language::text( 'launcher_label', 'en' ),
 			'frontend_enabled'         => true,
 			'auto_embed'               => false,
 			'start_open'               => false,
@@ -169,6 +173,18 @@ class JCB_Options {
 			'gpt-5.2',
 		);
 
+
+		$previous_language = JCB_Language::normalize( (string) ( $current['plugin_language'] ?? 'en' ) );
+		$new_language      = $previous_language;
+		$language_changed  = false;
+		if ( isset( $input['plugin_language'] ) ) {
+			$new_language = JCB_Language::normalize( (string) $input['plugin_language'] );
+			if ( $new_language !== $previous_language ) {
+				$language_changed = true;
+			}
+			$current['plugin_language'] = $new_language;
+		}
+
 		if ( isset( $input['assistant_name'] ) ) {
 			$current['assistant_name'] = JCB_Sanitizer::text( (string) $input['assistant_name'], 100 );
 		}
@@ -193,6 +209,16 @@ class JCB_Options {
 		}
 		if ( isset( $input['launcher_label'] ) ) {
 			$current['launcher_label'] = JCB_Sanitizer::text( (string) $input['launcher_label'], 40 );
+		}
+
+		if ( $language_changed ) {
+			$text_keys = array( 'instructions', 'welcome_message', 'placeholder', 'launcher_label' );
+			foreach ( $text_keys as $text_key ) {
+				$current_value = (string) ( $current[ $text_key ] ?? '' );
+				if ( '' === $current_value || in_array( $current_value, JCB_Language::default_candidates( $text_key ), true ) ) {
+					$current[ $text_key ] = JCB_Language::text( $text_key, $new_language );
+				}
+			}
 		}
 		if ( isset( $input['excluded_page_ids'] ) ) {
 			$current['excluded_page_ids'] = self::sanitize_id_list( (string) $input['excluded_page_ids'] );

@@ -8,6 +8,12 @@
 
   const restUrl = window.JCB_ADMIN.restUrl;
   const nonce = window.JCB_ADMIN.nonce;
+  const languages = window.JCB_ADMIN.languages || [
+    { code: 'en', name: 'English', native: 'English' },
+    { code: 'nl', name: 'Dutch', native: 'Nederlands' },
+    { code: 'de', name: 'German', native: 'Deutsch' },
+    { code: 'fr', name: 'French', native: 'Français' },
+  ];
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -173,6 +179,15 @@
     ${help ? `<p>${escapeHtml(help)}</p>` : ''}
   `;
 
+  const languageSelect = (help = '') => `
+    <label>Plugin language
+      <select data-setting="plugin_language">
+        ${languages.map((language) => `<option value="${escapeHtml(language.code)}" ${state.settings.plugin_language === language.code ? 'selected' : ''}>${escapeHtml(language.native)} (${escapeHtml(language.name)})</option>`).join('')}
+      </select>
+    </label>
+    ${help ? `<p>${escapeHtml(help)}</p>` : ''}
+  `;
+
   const saveButton = '<div class="jcb-form-actions"><button class="button button-primary" data-save-settings type="button">Save settings</button></div>';
 
   const renderSettingsPanel = (panelName) => {
@@ -184,6 +199,7 @@
         <div class="jcb-grid jcb-grid-two">
           <section class="jcb-card">
             <h2>Chatbox setup</h2>
+            ${languageSelect('Controls the front end chatbox labels and tells the AI which language to answer in. If your texts are still set to plugin defaults, they update when you change this.')}
             ${field('Chatbox name', 'assistant_name')}
             <label>Model
               <select data-setting="model">
@@ -341,6 +357,12 @@
       panel.innerHTML = `
         <div class="jcb-grid jcb-grid-two">
           <section class="jcb-card">
+            <h2>Language</h2>
+            ${languageSelect('Available languages are English, Dutch, German and French.')}
+            <p>The selected language changes chatbox interface text and adds an answer language rule to the AI instructions.</p>
+            ${saveButton}
+          </section>
+          <section class="jcb-card">
             <h2>Advanced settings</h2>
             ${checkbox('Debug mode', 'debug_mode')}
             ${checkbox('Replace old vector store on every sync', 'replace_vector_store')}
@@ -350,7 +372,7 @@
           <section class="jcb-card">
             <h2>Developer notes</h2>
             <p>REST namespace: ${escapeHtml(restUrl)}</p>
-            <p>Plugin version: ${escapeHtml(window.JCB_ADMIN.settings?.version || '0.3.0')}</p>
+            <p>Plugin version: ${escapeHtml(window.JCB_ADMIN.settings?.version || '0.4.0')}</p>
           </section>
         </div>`;
     }

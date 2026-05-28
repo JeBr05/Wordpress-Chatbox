@@ -37,6 +37,7 @@ final class JCB_Plugin {
 	private function includes(): void {
 		$files = array(
 			'class-jcb-sanitizer.php',
+			'class-jcb-language.php',
 			'class-jcb-options.php',
 			'class-jcb-encryption.php',
 			'class-jcb-logger.php',

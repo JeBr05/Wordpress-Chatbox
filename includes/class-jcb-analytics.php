@@ -2,23 +2,23 @@
 /**
  * Analytics helper.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Analytics {
+class JCB_Analytics {
 
 	/**
 	 * Get dashboard stats.
 	 */
 	public static function stats(): array {
 		global $wpdb;
-		$conversations = $wpdb->prefix . 'aikb_conversations';
-		$messages      = $wpdb->prefix . 'aikb_messages';
-		$events        = $wpdb->prefix . 'aikb_events';
+		$conversations = $wpdb->prefix . 'jcb_conversations';
+		$messages      = $wpdb->prefix . 'jcb_messages';
+		$events        = $wpdb->prefix . 'jcb_events';
 
 		$since_30 = gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS );
 		$since_7  = gmdate( 'Y-m-d H:i:s', time() - 7 * DAY_IN_SECONDS );
@@ -70,11 +70,11 @@ class AIKB_Analytics {
 	 */
 	public static function cleanup_old_logs(): void {
 		global $wpdb;
-		$options = AIKB_Options::all();
-		$days    = AIKB_Sanitizer::int_range( $options['log_retention_days'], 1, 365 );
+		$options = JCB_Options::all();
+		$days    = JCB_Sanitizer::int_range( $options['log_retention_days'], 1, 365 );
 		$before  = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}aikb_messages WHERE created_at < %s", $before ) );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}aikb_events WHERE created_at < %s", $before ) );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}aikb_conversations WHERE last_seen < %s", $before ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}jcb_messages WHERE created_at < %s", $before ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}jcb_events WHERE created_at < %s", $before ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}jcb_conversations WHERE last_seen < %s", $before ) );
 	}
 }

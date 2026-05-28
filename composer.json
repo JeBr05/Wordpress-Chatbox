@@ -1,6 +1,6 @@
 {
-  "name": "open-source-contributors/ai-knowledge-chatbot",
-  "description": "WordPress plugin for an OpenAI powered knowledge base chatbot.",
+  "name": "open-source-contributors/jeroens-chatbox",
+  "description": "WordPress plugin for an OpenAI powered knowledge base chatbox.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
   "require": {

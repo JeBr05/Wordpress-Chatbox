@@ -10,4 +10,4 @@ The plugin can store conversations for analytics. You can disable this in Securi
 
 Suggested privacy policy text:
 
-This website uses an AI chatbot to answer questions. When you use the chatbot, your message is processed by our website and sent to our AI provider to generate an answer. We may store chatbot messages to improve service quality. Do not share sensitive personal information in the chatbot.
+This website uses an AI chatbox to answer questions. When you use the chatbox, your message is processed by our website and sent to our AI provider to generate an answer. We may store chatbox messages to improve service quality. Do not share sensitive personal information in the chatbox.

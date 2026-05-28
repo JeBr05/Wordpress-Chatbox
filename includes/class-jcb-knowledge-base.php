@@ -2,20 +2,20 @@
 /**
  * Knowledge base content selection and sync.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Knowledge_Base {
+class JCB_Knowledge_Base {
 
 	/** Include meta key. */
-	private const INCLUDE_KEY = '_aikb_include';
-	private const SUMMARY_KEY = '_aikb_summary';
-	private const TAGS_KEY    = '_aikb_tags';
-	private const PRIORITY_KEY = '_aikb_priority';
+	private const INCLUDE_KEY = '_jcb_include';
+	private const SUMMARY_KEY = '_jcb_summary';
+	private const TAGS_KEY    = '_jcb_tags';
+	private const PRIORITY_KEY = '_jcb_priority';
 
 	/**
 	 * List available public content.
@@ -117,9 +117,9 @@ class AIKB_Knowledge_Base {
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return array();
 		}
-		update_post_meta( $post_id, self::SUMMARY_KEY, AIKB_Sanitizer::textarea( (string) ( $metadata['summary'] ?? '' ), 1000 ) );
-		update_post_meta( $post_id, self::TAGS_KEY, AIKB_Sanitizer::text( (string) ( $metadata['tags'] ?? '' ), 300 ) );
-		update_post_meta( $post_id, self::PRIORITY_KEY, AIKB_Sanitizer::int_range( $metadata['priority'] ?? 0, 0, 10 ) );
+		update_post_meta( $post_id, self::SUMMARY_KEY, JCB_Sanitizer::textarea( (string) ( $metadata['summary'] ?? '' ), 1000 ) );
+		update_post_meta( $post_id, self::TAGS_KEY, JCB_Sanitizer::text( (string) ( $metadata['tags'] ?? '' ), 300 ) );
+		update_post_meta( $post_id, self::PRIORITY_KEY, JCB_Sanitizer::int_range( $metadata['priority'] ?? 0, 0, 10 ) );
 		return self::item( $post_id );
 	}
 
@@ -129,25 +129,25 @@ class AIKB_Knowledge_Base {
 	public static function build_export_files() {
 		$posts = self::selected();
 		if ( empty( $posts ) ) {
-			return new WP_Error( 'aikb_no_content', __( 'Select at least one page before syncing.', 'ai-knowledge-chatbot' ) );
+			return new WP_Error( 'jcb_no_content', __( 'Select at least one page before syncing.', 'jeroens-chatbox' ) );
 		}
 
 		$upload_dir = wp_upload_dir();
-		$dir        = trailingslashit( $upload_dir['basedir'] ) . 'aikb';
+		$dir        = trailingslashit( $upload_dir['basedir'] ) . 'jcb';
 		if ( ! wp_mkdir_p( $dir ) ) {
-			return new WP_Error( 'aikb_upload_dir', __( 'Could not create export directory.', 'ai-knowledge-chatbot' ) );
+			return new WP_Error( 'jcb_upload_dir', __( 'Could not create export directory.', 'jeroens-chatbox' ) );
 		}
 
 		$files = array();
 		foreach ( $posts as $post ) {
 			$post_id  = (int) $post->ID;
 			$slug     = sanitize_title( $post->post_name ? $post->post_name : get_the_title( $post_id ) );
-			$file     = trailingslashit( $dir ) . 'aikb-' . $post_id . '-' . $slug . '-' . gmdate( 'Ymd-His' ) . '.txt';
+			$file     = trailingslashit( $dir ) . 'jcb-' . $post_id . '-' . $slug . '-' . gmdate( 'Ymd-His' ) . '.txt';
 			$body     = self::build_page_document( $post );
 			$result   = file_put_contents( $file, $body );
 			if ( false === $result ) {
 				self::delete_files( $files );
-				return new WP_Error( 'aikb_export_failed', __( 'Could not write export file.', 'ai-knowledge-chatbot' ) );
+				return new WP_Error( 'jcb_export_failed', __( 'Could not write export file.', 'jeroens-chatbox' ) );
 			}
 			$files[] = $file;
 		}
@@ -213,8 +213,8 @@ class AIKB_Knowledge_Base {
 	 * Sync content to OpenAI.
 	 */
 	public static function sync() {
-		$options = AIKB_Options::all();
-		$client  = new AIKB_OpenAI_Client();
+		$options = JCB_Options::all();
+		$client  = new JCB_OpenAI_Client();
 		$files   = self::build_export_files();
 		if ( is_wp_error( $files ) ) {
 			return $files;
@@ -229,7 +229,7 @@ class AIKB_Knowledge_Base {
 		$vector_store_id = (string) ( $store['id'] ?? '' );
 		if ( '' === $vector_store_id ) {
 			self::delete_files( $files );
-			return new WP_Error( 'aikb_missing_vector_id', __( 'OpenAI did not return a vector store id.', 'ai-knowledge-chatbot' ) );
+			return new WP_Error( 'jcb_missing_vector_id', __( 'OpenAI did not return a vector store id.', 'jeroens-chatbox' ) );
 		}
 
 		$file_ids = array();
@@ -242,7 +242,7 @@ class AIKB_Knowledge_Base {
 			$file_id = (string) ( $upload['id'] ?? '' );
 			if ( '' === $file_id ) {
 				self::delete_files( $files );
-				return new WP_Error( 'aikb_missing_file_id', __( 'OpenAI did not return a file id.', 'ai-knowledge-chatbot' ) );
+				return new WP_Error( 'jcb_missing_file_id', __( 'OpenAI did not return a file id.', 'jeroens-chatbox' ) );
 			}
 			$file_ids[] = $file_id;
 		}
@@ -254,7 +254,7 @@ class AIKB_Knowledge_Base {
 			return $batch;
 		}
 
-		AIKB_Options::update_internal(
+		JCB_Options::update_internal(
 			array(
 				'vector_store_id'     => $vector_store_id,
 				'vector_store_status' => (string) ( $batch['status'] ?? 'in_progress' ),
@@ -269,13 +269,13 @@ class AIKB_Knowledge_Base {
 			$client->delete_vector_store( $old_vector_store_id );
 		}
 
-		AIKB_Logger::event( 'knowledge_base.synced', array( 'vector_store_id' => $vector_store_id, 'file_count' => count( $file_ids ) ) );
+		JCB_Logger::event( 'knowledge_base.synced', array( 'vector_store_id' => $vector_store_id, 'file_count' => count( $file_ids ) ) );
 		return array(
 			'vector_store_id' => $vector_store_id,
 			'file_ids'        => $file_ids,
 			'file_count'      => count( $file_ids ),
 			'batch'           => $batch,
-			'options'         => AIKB_Options::safe_for_admin(),
+			'options'         => JCB_Options::safe_for_admin(),
 		);
 	}
 
@@ -283,18 +283,18 @@ class AIKB_Knowledge_Base {
 	 * Refresh the stored vector store batch status.
 	 */
 	public static function refresh_sync_status() {
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		if ( empty( $options['vector_store_id'] ) || empty( $options['last_batch_id'] ) ) {
-			return new WP_Error( 'aikb_no_batch', __( 'There is no vector store batch to check yet.', 'ai-knowledge-chatbot' ), array( 'status' => 404 ) );
+			return new WP_Error( 'jcb_no_batch', __( 'There is no vector store batch to check yet.', 'jeroens-chatbox' ), array( 'status' => 404 ) );
 		}
 
-		$client = new AIKB_OpenAI_Client();
+		$client = new JCB_OpenAI_Client();
 		$batch  = $client->retrieve_file_batch( (string) $options['vector_store_id'], (string) $options['last_batch_id'] );
 		if ( is_wp_error( $batch ) ) {
 			return $batch;
 		}
 
-		AIKB_Options::update_internal(
+		JCB_Options::update_internal(
 			array(
 				'vector_store_status' => (string) ( $batch['status'] ?? $options['vector_store_status'] ),
 			)
@@ -302,7 +302,7 @@ class AIKB_Knowledge_Base {
 
 		return array(
 			'batch'   => $batch,
-			'options' => AIKB_Options::safe_for_admin(),
+			'options' => JCB_Options::safe_for_admin(),
 		);
 	}
 }

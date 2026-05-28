@@ -2,14 +2,14 @@
 /**
  * Activation logic.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Activator {
+class JCB_Activator {
 
 	/**
 	 * Create database tables and default options.
@@ -19,9 +19,9 @@ class AIKB_Activator {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$charset_collate = $wpdb->get_charset_collate();
-		$conversations   = $wpdb->prefix . 'aikb_conversations';
-		$messages        = $wpdb->prefix . 'aikb_messages';
-		$events          = $wpdb->prefix . 'aikb_events';
+		$conversations   = $wpdb->prefix . 'jcb_conversations';
+		$messages        = $wpdb->prefix . 'jcb_messages';
+		$events          = $wpdb->prefix . 'jcb_events';
 
 		$sql = "CREATE TABLE {$conversations} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -61,19 +61,36 @@ class AIKB_Activator {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
-		update_option( 'aikb_db_version', AIKB_VERSION );
+		self::migrate_legacy_metadata();
+		update_option( 'jeroens_chatbox_db_version', JCB_VERSION );
 
-		if ( ! get_option( 'aikb_options' ) ) {
+		if ( ! get_option( 'jeroens_chatbox_options' ) ) {
+			$legacy = get_option( 'aikb_options', array() );
+
+			if ( is_array( $legacy ) && ! empty( $legacy ) ) {
+				add_option( 'jeroens_chatbox_options', $legacy, '', false );
+			}
 			$defaults = array(
-				'version'                   => AIKB_VERSION,
-				'assistant_name'            => get_bloginfo( 'name' ) . ' Assistant',
+				'version'                   => JCB_VERSION,
+				'assistant_name'            => "Jeroen's Chatbox",
 				'model'                     => 'gpt-4.1-mini',
 				'instructions'              => 'Answer questions using the selected website knowledge base. Be clear, helpful and honest. If the answer is not in the knowledge base, say that you do not know based on the available site content.',
 				'welcome_message'           => 'Hi. How can I help you?',
 				'placeholder'               => 'Ask a question...',
 				'accent_color'              => '#6f5bd6',
 				'launcher_position'         => 'right',
+				'launcher_label'            => 'Chat',
+				'frontend_enabled'          => true,
 				'auto_embed'                => false,
+				'start_open'                => false,
+				'show_on_home'              => true,
+				'show_on_pages'             => true,
+				'show_on_posts'             => true,
+				'show_on_archives'          => true,
+				'show_on_mobile'            => true,
+				'excluded_page_ids'         => '',
+				'excluded_url_paths'        => '',
+				'z_index'                   => 99999,
 				'enable_file_search'        => true,
 				'include_sources'           => true,
 				'max_file_results'          => 6,
@@ -98,11 +115,36 @@ class AIKB_Activator {
 				'api_key_encrypted'         => '',
 				'replace_vector_store'      => false,
 			);
-			add_option( 'aikb_options', $defaults, '', false );
+			add_option( 'jeroens_chatbox_options', $defaults, '', false );
 		}
 
-		if ( ! wp_next_scheduled( 'aikb_daily_cleanup' ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'aikb_daily_cleanup' );
+		if ( ! wp_next_scheduled( 'jcb_daily_cleanup' ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'jcb_daily_cleanup' );
+		}
+	}
+
+
+	/**
+	 * Move early test metadata to the public Jeroen's Chatbox keys.
+	 */
+	private static function migrate_legacy_metadata(): void {
+		global $wpdb;
+
+		$pairs = array(
+			'_aikb_include'  => '_jcb_include',
+			'_aikb_summary'  => '_jcb_summary',
+			'_aikb_tags'     => '_jcb_tags',
+			'_aikb_priority' => '_jcb_priority',
+		);
+
+		foreach ( $pairs as $old_key => $new_key ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$wpdb->postmeta} SET meta_key = %s WHERE meta_key = %s",
+					$new_key,
+					$old_key
+				)
+			);
 		}
 	}
 
@@ -110,9 +152,9 @@ class AIKB_Activator {
 	 * Remove scheduled events.
 	 */
 	public static function deactivate(): void {
-		$timestamp = wp_next_scheduled( 'aikb_daily_cleanup' );
+		$timestamp = wp_next_scheduled( 'jcb_daily_cleanup' );
 		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'aikb_daily_cleanup' );
+			wp_unschedule_event( $timestamp, 'jcb_daily_cleanup' );
 		}
 	}
 }

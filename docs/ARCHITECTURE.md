@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a WordPress plugin that makes an AI chatbot usable by non technical site owners.
+Create a WordPress plugin that makes an AI chatbox usable by non technical site owners.
 
 ## Main components
 
@@ -40,13 +40,13 @@ Three custom tables store conversations, messages and events. Logging can be dis
 
 ## Database tables
 
-`wp_aikb_conversations`
+`wp_jcb_conversations`
 Stores session hashes, timestamps, page URL, IP hash and user agent.
 
-`wp_aikb_messages`
+`wp_jcb_messages`
 Stores role, content, latency and token count.
 
-`wp_aikb_events`
+`wp_jcb_events`
 Stores sync events, feedback events and debug events.
 
 ## Privacy

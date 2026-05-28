@@ -2,14 +2,14 @@
 /**
  * Short lived chat session context.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Session {
+class JCB_Session {
 
 	/**
 	 * Get recent transient messages for a visitor session.
@@ -18,7 +18,7 @@ class AIKB_Session {
 	 * @param int    $limit Max messages.
 	 */
 	public static function recent( string $session_id, int $limit = 8 ): array {
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		if ( empty( $options['session_context_enabled'] ) ) {
 			return array();
 		}
@@ -29,7 +29,7 @@ class AIKB_Session {
 			return array();
 		}
 
-		$limit = AIKB_Sanitizer::int_range( $limit, 0, 20 );
+		$limit = JCB_Sanitizer::int_range( $limit, 0, 20 );
 		if ( 0 === $limit ) {
 			return array();
 		}
@@ -38,7 +38,7 @@ class AIKB_Session {
 		$out      = array();
 		foreach ( $messages as $message ) {
 			$role = isset( $message['role'] ) && 'assistant' === $message['role'] ? 'assistant' : 'user';
-			$text = isset( $message['content'] ) ? AIKB_Sanitizer::textarea( (string) $message['content'], 4000 ) : '';
+			$text = isset( $message['content'] ) ? JCB_Sanitizer::textarea( (string) $message['content'], 4000 ) : '';
 			if ( '' !== $text ) {
 				$out[] = array(
 					'role'    => $role,
@@ -57,12 +57,12 @@ class AIKB_Session {
 	 * @param string $content Message text.
 	 */
 	public static function append( string $session_id, string $role, string $content ): void {
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		if ( empty( $options['session_context_enabled'] ) ) {
 			return;
 		}
 
-		$limit = AIKB_Sanitizer::int_range( $options['max_history_messages'] ?? 8, 0, 20 );
+		$limit = JCB_Sanitizer::int_range( $options['max_history_messages'] ?? 8, 0, 20 );
 		if ( 0 === $limit ) {
 			return;
 		}
@@ -75,12 +75,12 @@ class AIKB_Session {
 
 		$messages[] = array(
 			'role'       => 'assistant' === $role ? 'assistant' : 'user',
-			'content'    => AIKB_Sanitizer::textarea( $content, 4000 ),
+			'content'    => JCB_Sanitizer::textarea( $content, 4000 ),
 			'created_at' => time(),
 		);
 		$messages = array_slice( $messages, -1 * $limit );
 
-		$ttl_minutes = AIKB_Sanitizer::int_range( $options['session_ttl_minutes'] ?? 60, 5, 1440 );
+		$ttl_minutes = JCB_Sanitizer::int_range( $options['session_ttl_minutes'] ?? 60, 5, 1440 );
 		set_transient( $key, $messages, $ttl_minutes * MINUTE_IN_SECONDS );
 	}
 
@@ -90,7 +90,7 @@ class AIKB_Session {
 	 * @param string $session_id Browser session id.
 	 */
 	private static function key( string $session_id ): string {
-		$session_id = AIKB_Sanitizer::text( $session_id, 160 );
-		return 'aikb_ctx_' . hash_hmac( 'sha256', $session_id, wp_salt( 'nonce' ) );
+		$session_id = JCB_Sanitizer::text( $session_id, 160 );
+		return 'jcb_ctx_' . hash_hmac( 'sha256', $session_id, wp_salt( 'nonce' ) );
 	}
 }

@@ -2,14 +2,14 @@
 /**
  * Sanitization helpers.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Sanitizer {
+class JCB_Sanitizer {
 
 	/**
 	 * Sanitize boolean-like value.

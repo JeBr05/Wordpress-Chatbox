@@ -1,5 +1,5 @@
 (() => {
-  const roots = Array.from(document.querySelectorAll('.aikb-chat-root'));
+  const roots = Array.from(document.querySelectorAll('.jcb-chat-root'));
   if (!roots.length) return;
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({
@@ -11,10 +11,10 @@
   }[char]));
 
   const sessionId = () => {
-    const key = 'aikb_session_id';
+    const key = 'jcb_session_id';
     let id = window.localStorage.getItem(key);
     if (!id) {
-      id = (window.crypto?.randomUUID && window.crypto.randomUUID()) || `aikb_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      id = (window.crypto?.randomUUID && window.crypto.randomUUID()) || `jcb_${Date.now()}_${Math.random().toString(16).slice(2)}`;
       window.localStorage.setItem(key, id);
     }
     return id;
@@ -22,7 +22,7 @@
 
   const createMessage = (role, text) => {
     const node = document.createElement('div');
-    node.className = `aikb-chat-message ${role}`;
+    node.className = `jcb-chat-message ${role}`;
     node.innerHTML = escapeHtml(text);
     return node;
   };
@@ -31,7 +31,7 @@
   const createSources = (sources) => {
     if (!Array.isArray(sources) || !sources.length) return null;
     const wrap = document.createElement('div');
-    wrap.className = 'aikb-chat-sources';
+    wrap.className = 'jcb-chat-sources';
     const items = sources.map((source) => {
       const title = escapeHtml(source.title || 'Source');
       const url = source.url ? escapeHtml(source.url) : '';
@@ -43,7 +43,7 @@
 
   const createFeedback = (config) => {
     const wrap = document.createElement('div');
-    wrap.className = 'aikb-chat-feedback';
+    wrap.className = 'jcb-chat-feedback';
     wrap.innerHTML = '<button type="button" data-rating="up">Helpful</button><button type="button" data-rating="down">Not helpful</button>';
     wrap.addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-rating]');
@@ -65,32 +65,37 @@
 
   const init = (root) => {
     const inlineConfig = root.dataset.config ? JSON.parse(root.dataset.config) : {};
-    const config = { ...(window.AIKB_CHAT || {}), ...inlineConfig };
-    root.style.setProperty('--aikb-chat-accent', config.accentColor || '#6f5bd6');
+    const config = { ...(window.JCB_CHAT || {}), ...inlineConfig };
+    root.style.setProperty('--jcb-chat-accent', config.accentColor || '#6f5bd6');
+    root.style.setProperty('--jcb-chat-z-index', String(config.zIndex || 99999));
     root.dataset.position = config.position || 'right';
 
     root.innerHTML = `
-      <button class="aikb-chat-launcher" type="button">Chat</button>
-      <section class="aikb-chat-window" hidden aria-live="polite">
-        <header class="aikb-chat-header">
-          <div class="aikb-chat-title">${escapeHtml(config.assistantName || 'Assistant')}</div>
-          <button class="aikb-chat-close" type="button" aria-label="Close">×</button>
+      <button class="jcb-chat-launcher" type="button">${escapeHtml(config.launcherLabel || 'Chat')}</button>
+      <section class="jcb-chat-window" hidden aria-live="polite">
+        <header class="jcb-chat-header">
+          <div class="jcb-chat-title">${escapeHtml(config.assistantName || "Jeroen's Chatbox")}</div>
+          <button class="jcb-chat-close" type="button" aria-label="Close">×</button>
         </header>
-        <div class="aikb-chat-messages"></div>
-        <form class="aikb-chat-form">
-          <input class="aikb-chat-input" type="text" autocomplete="off" placeholder="${escapeHtml(config.placeholder || 'Ask a question...')}">
-          <button class="aikb-chat-send" type="submit">Send</button>
+        <div class="jcb-chat-messages"></div>
+        <form class="jcb-chat-form">
+          <input class="jcb-chat-input" type="text" autocomplete="off" placeholder="${escapeHtml(config.placeholder || 'Ask a question...')}">
+          <button class="jcb-chat-send" type="submit">Send</button>
         </form>
       </section>
     `;
 
-    const launcher = root.querySelector('.aikb-chat-launcher');
-    const windowNode = root.querySelector('.aikb-chat-window');
-    const close = root.querySelector('.aikb-chat-close');
-    const messages = root.querySelector('.aikb-chat-messages');
-    const form = root.querySelector('.aikb-chat-form');
-    const input = root.querySelector('.aikb-chat-input');
-    const send = root.querySelector('.aikb-chat-send');
+    const launcher = root.querySelector('.jcb-chat-launcher');
+    const windowNode = root.querySelector('.jcb-chat-window');
+    const close = root.querySelector('.jcb-chat-close');
+    const messages = root.querySelector('.jcb-chat-messages');
+    const form = root.querySelector('.jcb-chat-form');
+    const input = root.querySelector('.jcb-chat-input');
+    const send = root.querySelector('.jcb-chat-send');
+
+    if (config.startOpen) {
+      windowNode.hidden = false;
+    }
 
     messages.appendChild(createMessage('assistant', config.welcomeMessage || 'Hi. How can I help you?'));
 
@@ -123,7 +128,7 @@
           }),
         });
         const json = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(json.message || 'The chatbot could not answer right now.');
+        if (!response.ok) throw new Error(json.message || 'The chatbox could not answer right now.');
         typing.innerHTML = escapeHtml(json.answer || 'No answer returned.');
         const sources = createSources(json.sources || []);
         if (sources) messages.appendChild(sources);

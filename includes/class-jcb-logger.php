@@ -2,14 +2,14 @@
 /**
  * Logging helper.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Logger {
+class JCB_Logger {
 
 	/**
 	 * Store event.
@@ -19,12 +19,12 @@ class AIKB_Logger {
 	 */
 	public static function event( string $type, array $data = array() ): void {
 		global $wpdb;
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		if ( empty( $options['debug_mode'] ) && str_starts_with( $type, 'debug.' ) ) {
 			return;
 		}
 		$wpdb->insert(
-			$wpdb->prefix . 'aikb_events',
+			$wpdb->prefix . 'jcb_events',
 			array(
 				'event_type' => sanitize_key( $type ),
 				'event_data' => wp_json_encode( $data ),
@@ -43,7 +43,7 @@ class AIKB_Logger {
 	 * @param array  $meta Extra data.
 	 */
 	public static function message( string $session_id, string $role, string $content, array $meta = array() ): void {
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		if ( empty( $options['log_conversations'] ) ) {
 			return;
 		}
@@ -55,11 +55,11 @@ class AIKB_Logger {
 		}
 
 		if ( ! empty( $options['redact_personal_data'] ) ) {
-			$content = AIKB_Sanitizer::redact( $content );
+			$content = JCB_Sanitizer::redact( $content );
 		}
 
 		$wpdb->insert(
-			$wpdb->prefix . 'aikb_messages',
+			$wpdb->prefix . 'jcb_messages',
 			array(
 				'conversation_id' => $conversation_id,
 				'role'            => sanitize_key( $role ),
@@ -81,7 +81,7 @@ class AIKB_Logger {
 	private static function conversation_id( string $session_id, array $meta ): int {
 		global $wpdb;
 		$hash = hash_hmac( 'sha256', $session_id, wp_salt( 'nonce' ) );
-		$table = $wpdb->prefix . 'aikb_conversations';
+		$table = $wpdb->prefix . 'jcb_conversations';
 		$id    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE session_hash = %s", $hash ) );
 
 		if ( $id > 0 ) {
@@ -96,7 +96,7 @@ class AIKB_Logger {
 		}
 
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
-		$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? AIKB_Sanitizer::text( (string) $_SERVER['HTTP_USER_AGENT'], 255 ) : '';
+		$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? JCB_Sanitizer::text( (string) $_SERVER['HTTP_USER_AGENT'], 255 ) : '';
 
 		$wpdb->insert(
 			$table,

@@ -2,14 +2,14 @@
 /**
  * Encryption helper for API key storage.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_Encryption {
+class JCB_Encryption {
 
 	/**
 	 * Encrypt plaintext.

@@ -2,21 +2,21 @@
 /**
  * REST API routes.
  *
- * @package AIKnowledgeChatbot
+ * @package JeroensChatbox
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class AIKB_REST_Controller {
+class JCB_REST_Controller {
 
 	/**
 	 * Register routes.
 	 */
 	public static function register_routes(): void {
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/settings',
 			array(
 				array(
@@ -33,7 +33,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/content',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -43,7 +43,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/content/(?P<id>\d+)/include',
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
@@ -53,7 +53,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/metadata/(?P<id>\d+)',
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
@@ -63,7 +63,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/sync',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -73,7 +73,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/sync-status',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -83,7 +83,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/test-api',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -93,7 +93,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/analytics',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -103,7 +103,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/chat',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -113,7 +113,7 @@ class AIKB_REST_Controller {
 		);
 
 		register_rest_route(
-			AIKB_REST_NAMESPACE,
+			JCB_REST_NAMESPACE,
 			'/feedback',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -141,7 +141,7 @@ class AIKB_REST_Controller {
 			$nonce = $request->get_header( 'x-wp-nonce' );
 		}
 		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new WP_Error( 'aikb_bad_nonce', __( 'Security check failed. Refresh the page and try again.', 'ai-knowledge-chatbot' ), array( 'status' => 403 ) );
+			return new WP_Error( 'jcb_bad_nonce', __( 'Security check failed. Refresh the page and try again.', 'jeroens-chatbox' ), array( 'status' => 403 ) );
 		}
 		return true;
 	}
@@ -150,7 +150,7 @@ class AIKB_REST_Controller {
 	 * Get settings.
 	 */
 	public static function get_settings(): WP_REST_Response {
-		return rest_ensure_response( AIKB_Options::safe_for_admin() );
+		return rest_ensure_response( JCB_Options::safe_for_admin() );
 	}
 
 	/**
@@ -159,8 +159,8 @@ class AIKB_REST_Controller {
 	 * @param WP_REST_Request $request Request.
 	 */
 	public static function save_settings( WP_REST_Request $request ): WP_REST_Response {
-		$settings = AIKB_Options::update( $request->get_json_params() ?: array() );
-		AIKB_Logger::event( 'settings.updated' );
+		$settings = JCB_Options::update( $request->get_json_params() ?: array() );
+		JCB_Logger::event( 'settings.updated' );
 		return rest_ensure_response( $settings );
 	}
 
@@ -170,9 +170,9 @@ class AIKB_REST_Controller {
 	public static function get_content(): WP_REST_Response {
 		return rest_ensure_response(
 			array(
-				'items'    => AIKB_Knowledge_Base::list_content(),
-				'options'  => AIKB_Options::safe_for_admin(),
-				'selected' => count( AIKB_Knowledge_Base::selected() ),
+				'items'    => JCB_Knowledge_Base::list_content(),
+				'options'  => JCB_Options::safe_for_admin(),
+				'selected' => count( JCB_Knowledge_Base::selected() ),
 			)
 		);
 	}
@@ -186,8 +186,8 @@ class AIKB_REST_Controller {
 		$id       = (int) $request['id'];
 		$params   = $request->get_json_params() ?: array();
 		$included = ! empty( $params['included'] );
-		$item     = AIKB_Knowledge_Base::set_included( $id, $included );
-		return rest_ensure_response( array( 'item' => $item, 'selected' => count( AIKB_Knowledge_Base::selected() ) ) );
+		$item     = JCB_Knowledge_Base::set_included( $id, $included );
+		return rest_ensure_response( array( 'item' => $item, 'selected' => count( JCB_Knowledge_Base::selected() ) ) );
 	}
 
 	/**
@@ -198,7 +198,7 @@ class AIKB_REST_Controller {
 	public static function save_metadata( WP_REST_Request $request ): WP_REST_Response {
 		$id     = (int) $request['id'];
 		$params = $request->get_json_params() ?: array();
-		$item   = AIKB_Knowledge_Base::save_metadata( $id, $params );
+		$item   = JCB_Knowledge_Base::save_metadata( $id, $params );
 		return rest_ensure_response( array( 'item' => $item ) );
 	}
 
@@ -206,7 +206,7 @@ class AIKB_REST_Controller {
 	 * Sync knowledge base.
 	 */
 	public static function sync() {
-		$result = AIKB_Knowledge_Base::sync();
+		$result = JCB_Knowledge_Base::sync();
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -217,7 +217,7 @@ class AIKB_REST_Controller {
 	 * Check vector store processing status.
 	 */
 	public static function sync_status() {
-		$result = AIKB_Knowledge_Base::refresh_sync_status();
+		$result = JCB_Knowledge_Base::refresh_sync_status();
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -228,19 +228,19 @@ class AIKB_REST_Controller {
 	 * Test API.
 	 */
 	public static function test_api() {
-		$client = new AIKB_OpenAI_Client();
+		$client = new JCB_OpenAI_Client();
 		$result = $client->request( 'GET', '/models', null, 30 );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-		return rest_ensure_response( array( 'ok' => true, 'message' => __( 'OpenAI connection works.', 'ai-knowledge-chatbot' ) ) );
+		return rest_ensure_response( array( 'ok' => true, 'message' => __( 'OpenAI connection works.', 'jeroens-chatbox' ) ) );
 	}
 
 	/**
 	 * Analytics.
 	 */
 	public static function analytics(): WP_REST_Response {
-		return rest_ensure_response( AIKB_Analytics::stats() );
+		return rest_ensure_response( JCB_Analytics::stats() );
 	}
 
 	/**
@@ -260,48 +260,48 @@ class AIKB_REST_Controller {
 		}
 
 		$params  = $request->get_json_params() ?: array();
-		$message = AIKB_Sanitizer::textarea( (string) ( $params['message'] ?? '' ), 2000 );
-		$session = AIKB_Sanitizer::text( (string) ( $params['sessionId'] ?? wp_generate_uuid4() ), 160 );
+		$message = JCB_Sanitizer::textarea( (string) ( $params['message'] ?? '' ), 2000 );
+		$session = JCB_Sanitizer::text( (string) ( $params['sessionId'] ?? wp_generate_uuid4() ), 160 );
 		$page    = esc_url_raw( (string) ( $params['pageUrl'] ?? '' ) );
 
 		if ( '' === $message ) {
-			return new WP_Error( 'aikb_empty_message', __( 'Message is required.', 'ai-knowledge-chatbot' ), array( 'status' => 400 ) );
+			return new WP_Error( 'jcb_empty_message', __( 'Message is required.', 'jeroens-chatbox' ), array( 'status' => 400 ) );
 		}
 
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		if ( empty( $options['api_key_encrypted'] ) ) {
-			return new WP_Error( 'aikb_not_configured', __( 'The chatbot is not configured yet.', 'ai-knowledge-chatbot' ), array( 'status' => 503 ) );
+			return new WP_Error( 'jcb_not_configured', __( 'The chatbox is not configured yet.', 'jeroens-chatbox' ), array( 'status' => 503 ) );
 		}
 
-		$history = AIKB_Session::recent( $session, (int) $options['max_history_messages'] );
+		$history = JCB_Session::recent( $session, (int) $options['max_history_messages'] );
 		$payload = self::build_chat_payload( $message, $options, $page, $history );
 		$started = microtime( true );
 
-		AIKB_Logger::message( $session, 'user', $message, array( 'page_url' => $page ) );
+		JCB_Logger::message( $session, 'user', $message, array( 'page_url' => $page ) );
 
-		$client = new AIKB_OpenAI_Client();
+		$client = new JCB_OpenAI_Client();
 		$result = $client->create_response( $payload );
 		if ( is_wp_error( $result ) ) {
-			AIKB_Logger::event( 'chat.error', array( 'message' => $result->get_error_message() ) );
+			JCB_Logger::event( 'chat.error', array( 'message' => $result->get_error_message() ) );
 			return $result;
 		}
 
-		$answer = AIKB_OpenAI_Client::output_text( $result );
+		$answer = JCB_OpenAI_Client::output_text( $result );
 		if ( '' === $answer ) {
-			$answer = __( 'I could not create an answer right now.', 'ai-knowledge-chatbot' );
+			$answer = __( 'I could not create an answer right now.', 'jeroens-chatbox' );
 		}
 
 		$latency = (int) round( ( microtime( true ) - $started ) * 1000 );
 		$tokens  = isset( $result['usage']['total_tokens'] ) ? absint( $result['usage']['total_tokens'] ) : 0;
 		self::record_usage( $tokens );
-		AIKB_Session::append( $session, 'user', $message );
-		AIKB_Session::append( $session, 'assistant', $answer );
-		AIKB_Logger::message( $session, 'assistant', $answer, array( 'latency_ms' => $latency, 'tokens' => $tokens, 'page_url' => $page ) );
+		JCB_Session::append( $session, 'user', $message );
+		JCB_Session::append( $session, 'assistant', $answer );
+		JCB_Logger::message( $session, 'assistant', $answer, array( 'latency_ms' => $latency, 'tokens' => $tokens, 'page_url' => $page ) );
 
 		return rest_ensure_response(
 			array(
 				'answer'     => wp_kses_post( $answer ),
-				'sources'    => AIKB_OpenAI_Client::file_sources( $result ),
+				'sources'    => JCB_OpenAI_Client::file_sources( $result ),
 				'sessionId'  => $session,
 				'latencyMs'  => $latency,
 				'usage'      => $result['usage'] ?? null,
@@ -342,7 +342,7 @@ class AIKB_REST_Controller {
 			'model'             => $options['model'],
 			'instructions'      => $instructions,
 			'input'             => $input,
-			'max_output_tokens' => AIKB_Sanitizer::int_range( $options['max_output_tokens'] ?? 700, 100, 4000 ),
+			'max_output_tokens' => JCB_Sanitizer::int_range( $options['max_output_tokens'] ?? 700, 100, 4000 ),
 		);
 
 		if ( ! empty( $options['enable_file_search'] ) && ! empty( $options['vector_store_id'] ) ) {
@@ -364,21 +364,21 @@ class AIKB_REST_Controller {
 	 * Basic public rate limit by IP.
 	 */
 	private static function rate_limit() {
-		$options      = AIKB_Options::all();
-		$limit_minute = AIKB_Sanitizer::int_range( $options['rate_limit_per_minute'], 1, 120 );
-		$limit_hour   = AIKB_Sanitizer::int_range( $options['rate_limit_per_hour'] ?? 80, 1, 2000 );
+		$options      = JCB_Options::all();
+		$limit_minute = JCB_Sanitizer::int_range( $options['rate_limit_per_minute'], 1, 120 );
+		$limit_hour   = JCB_Sanitizer::int_range( $options['rate_limit_per_hour'] ?? 80, 1, 2000 );
 		$ip           = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
 		$hash         = md5( $ip );
 
 		$checks = array(
-			array( 'key' => 'aikb_rate_min_' . $hash, 'limit' => $limit_minute, 'ttl' => MINUTE_IN_SECONDS ),
-			array( 'key' => 'aikb_rate_hour_' . $hash, 'limit' => $limit_hour, 'ttl' => HOUR_IN_SECONDS ),
+			array( 'key' => 'jcb_rate_min_' . $hash, 'limit' => $limit_minute, 'ttl' => MINUTE_IN_SECONDS ),
+			array( 'key' => 'jcb_rate_hour_' . $hash, 'limit' => $limit_hour, 'ttl' => HOUR_IN_SECONDS ),
 		);
 
 		foreach ( $checks as $check ) {
 			$count = (int) get_transient( $check['key'] );
 			if ( $count >= $check['limit'] ) {
-				return new WP_Error( 'aikb_rate_limited', __( 'Too many messages. Please wait and try again.', 'ai-knowledge-chatbot' ), array( 'status' => 429 ) );
+				return new WP_Error( 'jcb_rate_limited', __( 'Too many messages. Please wait and try again.', 'jeroens-chatbox' ), array( 'status' => 429 ) );
 			}
 		}
 
@@ -394,16 +394,16 @@ class AIKB_REST_Controller {
 	 * Check daily token budget before calling the API.
 	 */
 	private static function budget_available() {
-		$options = AIKB_Options::all();
+		$options = JCB_Options::all();
 		$budget  = max( 0, absint( $options['daily_token_budget'] ?? 0 ) );
 		if ( 0 === $budget ) {
 			return true;
 		}
 
-		$key  = 'aikb_tokens_' . gmdate( 'Ymd' );
+		$key  = 'jcb_tokens_' . gmdate( 'Ymd' );
 		$used = (int) get_transient( $key );
 		if ( $used >= $budget ) {
-			return new WP_Error( 'aikb_daily_budget_hit', __( 'The chatbot daily budget has been reached. Please try again later.', 'ai-knowledge-chatbot' ), array( 'status' => 429 ) );
+			return new WP_Error( 'jcb_daily_budget_hit', __( 'The chatbox daily budget has been reached. Please try again later.', 'jeroens-chatbox' ), array( 'status' => 429 ) );
 		}
 		return true;
 	}
@@ -417,7 +417,7 @@ class AIKB_REST_Controller {
 		if ( $tokens <= 0 ) {
 			return;
 		}
-		$key  = 'aikb_tokens_' . gmdate( 'Ymd' );
+		$key  = 'jcb_tokens_' . gmdate( 'Ymd' );
 		$used = (int) get_transient( $key );
 		set_transient( $key, $used + $tokens, DAY_IN_SECONDS + HOUR_IN_SECONDS );
 	}
@@ -429,12 +429,12 @@ class AIKB_REST_Controller {
 	 */
 	public static function feedback( WP_REST_Request $request ): WP_REST_Response {
 		$params = $request->get_json_params() ?: array();
-		AIKB_Logger::event(
+		JCB_Logger::event(
 			'chat.feedback',
 			array(
-				'session' => AIKB_Sanitizer::text( (string) ( $params['sessionId'] ?? '' ), 160 ),
-				'rating'  => AIKB_Sanitizer::text( (string) ( $params['rating'] ?? '' ), 20 ),
-				'note'    => AIKB_Sanitizer::textarea( (string) ( $params['note'] ?? '' ), 500 ),
+				'session' => JCB_Sanitizer::text( (string) ( $params['sessionId'] ?? '' ), 160 ),
+				'rating'  => JCB_Sanitizer::text( (string) ( $params['rating'] ?? '' ), 20 ),
+				'note'    => JCB_Sanitizer::textarea( (string) ( $params['note'] ?? '' ), 500 ),
 			)
 		);
 		return rest_ensure_response( array( 'ok' => true ) );

@@ -3,7 +3,7 @@
 ## Version 0.3
 
 Add response streaming.
-Add per assistant presets.
+Add per chatbox presets.
 Add more detailed sync progress.
 Add partial resync for changed pages only.
 Add Gutenberg block.

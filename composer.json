@@ -1,0 +1,12 @@
+{
+  "name": "open-source-contributors/ai-knowledge-chatbot",
+  "description": "WordPress plugin for an OpenAI powered knowledge base chatbot.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=8.0"
+  },
+  "scripts": {
+    "lint": "find . -name '*.php' -print0 | xargs -0 -n1 php -l"
+  }
+}

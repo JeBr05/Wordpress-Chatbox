@@ -6,7 +6,7 @@
  *
  * @wordpress-plugin
  * Plugin Name:       AI Knowledge Chatbot
- * Plugin URI:        https://github.com/your-name/ai-knowledge-chatbot
+ * Plugin URI:        https://github.com/JeBr05/Wordpress-Chatbox
  * Description:       Build a site-aware chatbot from selected WordPress content using an OpenAI API key and vector store.
  * Version:           0.2.0
  * Requires at least: 6.4

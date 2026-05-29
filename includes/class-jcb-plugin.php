@@ -39,6 +39,7 @@ final class JCB_Plugin {
 			'class-jcb-sanitizer.php',
 			'class-jcb-language.php',
 			'class-jcb-options.php',
+			'class-jcb-security-manager.php',
 			'class-jcb-encryption.php',
 			'class-jcb-logger.php',
 			'class-jcb-session.php',

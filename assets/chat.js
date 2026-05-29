@@ -150,6 +150,9 @@
         });
         const json = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(json.message || strings.errorAnswer || 'The chatbox could not answer right now.');
+        if (json.security && json.security.message && ['warning', 'flagged'].includes(json.security.action)) {
+          messages.appendChild(createMessage('system', json.security.message));
+        }
         typing.innerHTML = escapeHtml(json.answer || strings.noAnswer || 'No answer returned.');
         const sources = createSources(json.sources || [], strings);
         if (sources) messages.appendChild(sources);

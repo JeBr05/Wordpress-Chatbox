@@ -10,6 +10,7 @@
   const nonce = window.JCB_ADMIN.nonce;
   const strings = window.JCB_ADMIN.adminStrings || {};
   const users = window.JCB_ADMIN.users || [];
+  const securityStats = window.JCB_ADMIN.securityStats || { total_flagged: 0, last_24_hours: 0, last_7_days: 0 };
   const languages = window.JCB_ADMIN.languages || [
     { code: 'en', name: 'English', native: 'English' },
     { code: 'nl', name: 'Dutch', native: 'Nederlands' },
@@ -354,6 +355,81 @@
 
   const saveButton = () => `<div class="jcb-form-actions"><button class="button button-primary" data-save-settings type="button">${escapeHtml(t('save_settings', 'Save settings'))}</button></div>`;
 
+  const switchField = (label, key, help = '') => `
+    <div class="jcb-setting-row">
+      <div>
+        <strong>${escapeHtml(label)}</strong>
+        ${help ? `<p>${escapeHtml(help)}</p>` : ''}
+      </div>
+      <label class="jcb-switch" aria-label="${escapeHtml(label)}">
+        <input type="checkbox" data-setting="${escapeHtml(key)}" ${state.settings[key] ? 'checked' : ''}>
+        <span></span>
+      </label>
+    </div>
+  `;
+
+  const securitySelect = (label, key, options) => `
+    <label>${escapeHtml(label)}
+      <select data-setting="${escapeHtml(key)}">
+        ${options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(state.settings[key]) === String(option.value) ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+      </select>
+    </label>
+  `;
+
+  const severitySelect = (key) => securitySelect(t('severity', 'Severity'), key, [
+    { value: 1, label: t('severity_low', 'Low 1 point') },
+    { value: 3, label: t('severity_medium', 'Medium 3 points') },
+    { value: 5, label: t('severity_high', 'High 5 points') },
+    { value: 10, label: t('severity_critical', 'Critical 10 points') },
+  ]);
+
+  const securityInfo = (text) => `<div class="jcb-security-info">${escapeHtml(text)}</div>`;
+
+  const securityStatCards = () => `
+    <div class="jcb-security-stats">
+      <div class="jcb-security-stat is-active"><span>${escapeHtml(t('security_status', 'Security status'))}</span><strong>${state.settings.security_enabled ? escapeHtml(t('active', 'Active')) : escapeHtml(t('inactive', 'Inactive'))}</strong></div>
+      <div class="jcb-security-stat"><span>${escapeHtml(t('total_flagged', 'Total flagged'))}</span><strong>${escapeHtml(securityStats.total_flagged || 0)}</strong></div>
+      <div class="jcb-security-stat"><span>${escapeHtml(t('last_24_hours', 'Last 24 hours'))}</span><strong>${escapeHtml(securityStats.last_24_hours || 0)}</strong></div>
+      <div class="jcb-security-stat"><span>${escapeHtml(t('last_7_days', 'Last 7 days'))}</span><strong>${escapeHtml(securityStats.last_7_days || 0)}</strong></div>
+    </div>
+  `;
+
+  const securityScoreCards = () => `
+    <div class="jcb-score-grid">
+      <div><strong>1 ${escapeHtml(t('point_short', 'pt'))}</strong><span>${escapeHtml(t('low', 'Low'))}</span><small>${escapeHtml(t('minor_anomaly', 'Minor anomaly'))}</small></div>
+      <div><strong>3 ${escapeHtml(t('points_short', 'pts'))}</strong><span>${escapeHtml(t('medium', 'Medium'))}</span><small>${escapeHtml(t('suspicious_pattern', 'Suspicious pattern'))}</small></div>
+      <div><strong>5 ${escapeHtml(t('points_short', 'pts'))}</strong><span>${escapeHtml(t('high', 'High'))}</span><small>${escapeHtml(t('likely_malicious', 'Likely malicious'))}</small></div>
+      <div><strong>10 ${escapeHtml(t('points_short', 'pts'))}</strong><span>${escapeHtml(t('critical', 'Critical'))}</span><small>${escapeHtml(t('clear_attack', 'Clear attack'))}</small></div>
+    </div>
+  `;
+
+  const securityRuleCard = (title, description, enabledKey, severityKey, body) => `
+    <section class="jcb-security-rule">
+      <div class="jcb-security-rule-head">
+        <label class="jcb-rule-enable">
+          <input type="checkbox" data-setting="${escapeHtml(enabledKey)}" ${state.settings[enabledKey] ? 'checked' : ''}>
+          <strong>${escapeHtml(title)}</strong>
+        </label>
+        <div class="jcb-rule-severity">${severitySelect(severityKey)}</div>
+      </div>
+      <p>${escapeHtml(description)}</p>
+      ${body}
+    </section>
+  `;
+
+  const securityTestResult = (data) => {
+    const flags = data.flags || [];
+    return `
+      <div class="jcb-test-result ${escapeHtml(data.action || 'allowed')}">
+        <strong>${escapeHtml(t('test_result', 'Test result'))}: ${escapeHtml(data.action || 'allowed')}</strong>
+        <p>${escapeHtml(data.message || '')}</p>
+        <p>${escapeHtml(t('score', 'Score'))}: ${escapeHtml(data.score || 0)}</p>
+        ${flags.length ? `<ul>${flags.map((flag) => `<li>${escapeHtml(flag.label || flag.name)}: ${escapeHtml(flag.severity || 0)} ${escapeHtml(t('points_short', 'pts'))}</li>`).join('')}</ul>` : `<p>${escapeHtml(t('no_flags', 'No flags.'))}</p>`}
+      </div>
+    `;
+  };
+
+
   const renderSettingsPanel = (panelName) => {
     const panel = $(`[data-panel="${panelName}"]`);
     if (!panel) return;
@@ -497,7 +573,7 @@
                   <div class="jcb-preview-window">
                     <div class="jcb-preview-header">
                       <span>${escapeHtml(state.settings.assistant_name || "Jeroen's Chatbox")}</span>
-                      <span>×</span>
+                      <span class="jcb-preview-close">×</span>
                     </div>
                     <div class="jcb-preview-messages">
                       <div class="jcb-preview-bubble assistant" data-preview-welcome>${escapeHtml(state.settings.welcome_message || '')}</div>
@@ -524,21 +600,105 @@
 
     if (panelName === 'security') {
       panel.innerHTML = `
-        <div class="jcb-grid jcb-grid-two">
-          <section class="jcb-card">
-            <h2>${escapeHtml(t('security_privacy', 'Security and privacy'))}</h2>
-            ${field(t('rate_limit_minute', 'Rate limit per minute per IP'), 'rate_limit_per_minute', 'number')}
-            ${field(t('rate_limit_hour', 'Rate limit per hour per IP'), 'rate_limit_per_hour', 'number')}
-            ${field(t('daily_token_budget', 'Daily token budget'), 'daily_token_budget', 'number', t('daily_token_budget_help', 'Set 0 to disable the daily budget cap.'))}
-            ${checkbox(t('log_conversations', 'Log conversations'), 'log_conversations')}
-            ${field(t('log_retention_days', 'Log retention days'), 'log_retention_days', 'number')}
-            ${checkbox(t('redact_personal_data', 'Redact email addresses and phone numbers before logging'), 'redact_personal_data')}
-            ${saveButton()}
+        <div class="jcb-security-layout">
+          ${securityStatCards()}
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon">◎</span><div><h2>${escapeHtml(t('security_system', 'Security system'))}</h2><p>${escapeHtml(t('security_system_desc', 'Master switch for all security protections.'))}</p></div></div>
+            ${switchField(t('enable_security_system', 'Enable security system'), 'security_enabled', t('enable_security_system_help', 'When disabled, security checks are bypassed and messages go directly to the AI.'))}
           </section>
-          <section class="jcb-card">
-            <h2>${escapeHtml(t('recommended_defaults', 'Recommended defaults'))}</h2>
-            <p>${escapeHtml(t('recommended_defaults_p', 'Keep rate limiting on. Keep redaction on. Only enable debug mode while testing.'))}</p>
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon cyan">◷</span><div><h2>${escapeHtml(t('rate_limiting', 'Rate limiting'))}</h2><p>${escapeHtml(t('rate_limiting_desc', 'Prevent spam by limiting how fast visitors can send messages.'))}</p></div></div>
+            ${switchField(t('enable_rate_limiting', 'Enable rate limiting'), 'rate_limit_enabled', t('enable_rate_limiting_help', 'Limits messages by session token and IP address.'))}
+            <div class="jcb-security-subgrid">
+              <div>
+                <h3>${escapeHtml(t('per_user_token', 'Per session token'))}</h3>
+                ${field(t('max_messages', 'Max messages'), 'rate_limit_user_max', 'number', t('messages_per_window', 'Messages per window.'))}
+                ${field(t('time_window', 'Time window'), 'rate_limit_user_window', 'number', t('seconds', 'Seconds.'))}
+              </div>
+              <div>
+                <h3>${escapeHtml(t('per_ip_address', 'Per IP address'))}</h3>
+                ${field(t('max_messages', 'Max messages'), 'rate_limit_ip_max', 'number', t('messages_per_window', 'Messages per window.'))}
+                ${field(t('time_window', 'Time window'), 'rate_limit_ip_window', 'number', t('seconds', 'Seconds.'))}
+              </div>
+            </div>
+            ${securityInfo(t('rate_limit_note', 'IP based limits are useful when visitors share a network. Session token limits are useful for normal visitors.'))}
+            <div class="jcb-security-subgrid">
+              ${field(t('cooldown_period', 'Cooldown period'), 'rate_limit_cooldown_seconds', 'number', t('cooldown_help', 'How long a visitor must wait after hitting the limit. Use 0 until the window expires.'))}
+              ${textarea(t('rate_limit_message', 'Rate limit message'), 'rate_limit_message', 3, t('message_shown_rate_limited', 'Message shown to visitors who are rate limited.'))}
+            </div>
           </section>
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon purple">≡</span><div><h2>${escapeHtml(t('message_length', 'Message length'))}</h2><p>${escapeHtml(t('message_length_desc', 'Control the maximum length of user messages.'))}</p></div></div>
+            ${switchField(t('enable_message_length_limit', 'Enable message length limit'), 'message_length_enabled', t('message_length_help', 'Reject very long prompts before they can use API tokens.'))}
+            ${field(t('maximum_characters', 'Maximum characters'), 'message_max_chars', 'number', t('maximum_characters_help', 'Default is 2000 characters.'))}
+            ${securityInfo(t('message_length_note', 'A normal visitor question is usually short. Lowering below 200 can block valid questions.'))}
+            ${textarea(t('length_exceeded_message', 'Length exceeded message'), 'message_length_message', 3, t('length_exceeded_help', 'Use {limit} to insert the character limit.'))}
+          </section>
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon red">⊘</span><div><h2>${escapeHtml(t('blocked_words_phrases', 'Blocked words and phrases'))}</h2><p>${escapeHtml(t('blocked_words_desc', 'Filter messages containing specific words or phrases.'))}</p></div></div>
+            ${switchField(t('enable_blocked_words_filter', 'Enable blocked words filter'), 'blocked_words_enabled', t('blocked_words_help', 'Add one word or phrase per line. You can use * as a wildcard.'))}
+            ${textarea(t('blocked_words_list', 'Blocked words list'), 'blocked_words_list', 8, t('blocked_words_list_help', 'One word or phrase per line. Matching is case insensitive.'))}
+            ${securitySelect(t('action_when_blocked_word_found', 'Action when blocked word is found'), 'blocked_words_action', [
+              { value: 'warn', label: t('warn_allow', 'Warn and allow') },
+              { value: 'block', label: t('block_message', 'Block message') },
+            ])}
+            ${textarea(t('blocked_word_message', 'Blocked word message'), 'blocked_words_message', 3, t('blocked_word_message_help', 'Shown when a message is blocked or warned.'))}
+          </section>
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon orange">▤</span><div><h2>${escapeHtml(t('ip_blocklist', 'IP blocklist'))}</h2><p>${escapeHtml(t('ip_blocklist_desc', 'Block specific IP addresses from using the chat.'))}</p></div></div>
+            ${switchField(t('enable_ip_blocklist', 'Enable IP blocklist'), 'ip_blocklist_enabled', t('ip_blocklist_help', 'Supports exact IPv4 and IPv4 CIDR ranges.'))}
+            ${textarea(t('blocked_ip_addresses', 'Blocked IP addresses'), 'ip_blocklist', 7, t('blocked_ip_addresses_help', 'One IP address per line. Example: 192.168.1.100 or 10.0.0.0/24.'))}
+            ${textarea(t('blocked_ip_message', 'Blocked IP message'), 'ip_block_message', 3, t('blocked_ip_message_help', 'Shown to visitors whose IP address is blocked.'))}
+          </section>
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon amber">⚑</span><div><h2>${escapeHtml(t('auto_flag_detection', 'Auto flag detection'))}</h2><p>${escapeHtml(t('auto_flag_desc', 'Detect suspicious conversations using pattern matching and scoring.'))}</p></div></div>
+            ${switchField(t('enable_auto_flag_system', 'Enable auto flag system'), 'auto_flag_enabled', t('auto_flag_help', 'A message can trigger multiple checks. Each check adds points.'))}
+            <h3>${escapeHtml(t('how_scoring_works', 'How scoring works'))}</h3>
+            ${securityScoreCards()}
+            ${securityInfo(t('scoring_note', 'When the total score reaches the threshold, the configured action is taken.'))}
+            <div class="jcb-security-subgrid">
+              ${field(t('flag_threshold', 'Flag threshold'), 'auto_flag_threshold', 'number', t('flag_threshold_help', 'Flag when total score reaches this value.'))}
+              ${securitySelect(t('action_when_threshold_exceeded', 'Action when threshold is exceeded'), 'auto_flag_action', [
+                { value: 'flag', label: t('flag_allow_review', 'Flag and allow') },
+                { value: 'block', label: t('block_message', 'Block message') },
+              ])}
+            </div>
+            ${textarea(t('auto_flag_block_message', 'Auto flag block message'), 'auto_flag_block_message', 3, t('auto_flag_block_help', 'Shown when the action is block.'))}
+          </section>
+
+          ${securityRuleCard(t('jailbreak_detection', 'Jailbreak detection'), t('jailbreak_detection_desc', 'Detect attempts to override instructions, extract system prompts or bypass rules.'), 'detect_jailbreak_enabled', 'jailbreak_severity', textarea(t('jailbreak_patterns', 'Jailbreak patterns'), 'jailbreak_patterns', 9, t('pattern_help', 'One phrase per line. Wrap in / / for regex. Use * as wildcard.')))}
+
+          ${securityRuleCard(t('abuse_detection', 'Abuse detection'), t('abuse_detection_desc', 'Detect excessive special characters and code injection attempts.'), 'detect_abuse_enabled', 'abuse_severity', switchField(t('code_injection_check', 'Code injection check'), 'code_injection_enabled', t('code_injection_check_help', 'Checks for SQL injection, script tags and common eval or exec calls.')))}
+
+          ${securityRuleCard(t('content_flags', 'Content flags'), t('content_flags_desc', 'Custom content patterns to flag. Useful for sensitive information or admin access requests.'), 'detect_content_enabled', 'content_severity', textarea(t('content_patterns', 'Content patterns'), 'content_patterns', 8, t('content_patterns_help', 'One phrase per line. Same syntax as jailbreak patterns.')))}
+
+          ${securityRuleCard(t('behavioral_analysis', 'Behavioral analysis'), t('behavioral_analysis_desc', 'Detect rapid messages and repeated messages from the same session.'), 'detect_behavior_enabled', 'behavior_severity', `<div class="jcb-security-subgrid">${field(t('rapid_message_threshold', 'Rapid message threshold'), 'behavior_rapid_messages', 'number', t('messages', 'Messages'))}${field(t('time_window', 'Time window'), 'behavior_time_window', 'number', t('seconds', 'Seconds'))}${field(t('repeated_message_max', 'Repeated message max'), 'behavior_repeated_message_max', 'number', t('repeated_message_help', 'Same message sent this many times.'))}</div>`)}
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon green">✓</span><div><h2>${escapeHtml(t('whitelist', 'Whitelist'))}</h2><p>${escapeHtml(t('whitelist_desc', 'Session tokens and IPs that bypass all security checks.'))}</p></div></div>
+            ${securityInfo(t('whitelist_note', 'Use this for trusted testers or internal staff. Whitelisted visitors bypass rate limiting, blocked words and auto flag detection.'))}
+            <div class="jcb-security-subgrid">
+              ${textarea(t('whitelisted_user_tokens', 'Whitelisted session tokens'), 'whitelist_user_tokens', 5, t('whitelisted_user_tokens_help', 'One session token per line.'))}
+              ${textarea(t('whitelisted_ip_addresses', 'Whitelisted IP addresses'), 'whitelist_ips', 5, t('whitelisted_ip_addresses_help', 'One IP address per line. CIDR ranges are supported for IPv4.'))}
+            </div>
+          </section>
+
+          <section class="jcb-card jcb-security-card">
+            <div class="jcb-card-heading"><span class="jcb-card-icon">‹›</span><div><h2>${escapeHtml(t('test_security_rules', 'Test security rules'))}</h2><p>${escapeHtml(t('test_security_rules_desc', 'Test a message against your current security configuration. Save settings first.'))}</p></div></div>
+            <label>${escapeHtml(t('test_message', 'Test message'))}
+              <textarea data-security-test-message rows="5" placeholder="${escapeHtml(t('test_message_placeholder', 'Type a test message here.'))}"></textarea>
+            </label>
+            <div class="jcb-form-actions"><button class="button" data-test-security type="button">${escapeHtml(t('run_test', 'Run test'))}</button></div>
+            <div data-security-test-result></div>
+          </section>
+
+          ${saveButton()}
         </div>`;
     }
 
@@ -585,7 +745,7 @@
           <section class="jcb-card">
             <h2>${escapeHtml(t('developer_notes', 'Developer notes'))}</h2>
             <p>${escapeHtml(t('rest_namespace', 'REST namespace'))}: ${escapeHtml(restUrl)}</p>
-            <p>${escapeHtml(t('plugin_version', 'Plugin version'))}: ${escapeHtml(window.JCB_ADMIN.settings?.version || '0.7.0')}</p>
+            <p>${escapeHtml(t('plugin_version', 'Plugin version'))}: ${escapeHtml(window.JCB_ADMIN.settings?.version || '0.8.0')}</p>
           </section>
         </div>`;
     }
@@ -768,6 +928,23 @@
     }
   };
 
+
+  const runSecurityTest = async (button) => {
+    const panel = button.closest('[data-panel="security"]');
+    const message = $('[data-security-test-message]', panel)?.value || '';
+    const result = $('[data-security-test-result]', panel);
+    setBusy(button, true, t('testing', 'Testing...'));
+    try {
+      const data = await api('/security-test', { method: 'POST', body: JSON.stringify({ message }) });
+      if (result) result.innerHTML = securityTestResult(data);
+    } catch (error) {
+      if (result) result.innerHTML = `<div class="jcb-test-result blocked"><strong>${escapeHtml(error.message)}</strong></div>`;
+      notice(error.message, 'error');
+    } finally {
+      setBusy(button, false);
+    }
+  };
+
   document.addEventListener('click', (event) => {
     const tab = event.target.closest('.jcb-tab');
     if (tab) {
@@ -799,6 +976,7 @@
     if (event.target.matches('[data-save-settings]')) saveSettings(event.target);
     if (event.target.matches('[data-test-api]')) testApi(event.target);
     if (event.target.matches('[data-check-sync]')) checkSync(event.target);
+    if (event.target.matches('[data-test-security]')) runSecurityTest(event.target);
     if (event.target.matches('.jcb-sync')) sync(event.target);
     if (event.target.matches('[data-copy-shortcode]')) {
       navigator.clipboard?.writeText(window.JCB_ADMIN.shortcode);

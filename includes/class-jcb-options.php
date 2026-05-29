@@ -147,6 +147,44 @@ class JCB_Options {
 			'log_conversations'        => true,
 			'log_retention_days'       => 30,
 			'redact_personal_data'     => true,
+			'security_enabled'         => true,
+			'rate_limit_enabled'       => true,
+			'rate_limit_user_max'      => 30,
+			'rate_limit_user_window'   => 60,
+			'rate_limit_ip_max'        => 60,
+			'rate_limit_ip_window'     => 60,
+			'rate_limit_cooldown_seconds' => 30,
+			'rate_limit_message'       => 'You are sending messages too quickly. Please wait a moment before trying again.',
+			'message_length_enabled'   => true,
+			'message_max_chars'        => 2000,
+			'message_length_message'   => 'Your message is too long. Please keep it under {limit} characters.',
+			'blocked_words_enabled'    => false,
+			'blocked_words_list'       => '',
+			'blocked_words_action'     => 'warn',
+			'blocked_words_message'    => 'Your message contains content that is not allowed. Please rephrase your question.',
+			'ip_blocklist_enabled'     => false,
+			'ip_blocklist'             => '',
+			'ip_block_message'         => 'Access denied. Please contact support if you believe this is an error.',
+			'auto_flag_enabled'        => true,
+			'auto_flag_threshold'      => 10,
+			'auto_flag_action'         => 'flag',
+			'auto_flag_block_message'  => 'Your message was flagged by the security system. Please rephrase your question.',
+			'detect_jailbreak_enabled' => true,
+			'jailbreak_severity'       => 10,
+			'jailbreak_patterns'       => self::default_jailbreak_patterns(),
+			'detect_abuse_enabled'     => true,
+			'abuse_severity'           => 5,
+			'code_injection_enabled'   => true,
+			'detect_content_enabled'   => true,
+			'content_severity'         => 3,
+			'content_patterns'         => self::default_content_patterns(),
+			'detect_behavior_enabled'  => true,
+			'behavior_severity'        => 3,
+			'behavior_rapid_messages'  => 5,
+			'behavior_time_window'     => 10,
+			'behavior_repeated_message_max' => 3,
+			'whitelist_user_tokens'    => '',
+			'whitelist_ips'            => '',
 			'debug_mode'               => false,
 			'delete_data_on_uninstall' => false,
 			'replace_vector_store'     => false,
@@ -274,6 +312,70 @@ class JCB_Options {
 			$current['excluded_url_paths'] = self::sanitize_path_list( (string) $input['excluded_url_paths'] );
 		}
 
+		$security_text_keys = array(
+			'rate_limit_message'      => 300,
+			'message_length_message'  => 300,
+			'blocked_words_message'   => 300,
+			'ip_block_message'        => 300,
+			'auto_flag_block_message' => 300,
+		);
+		foreach ( $security_text_keys as $key => $limit ) {
+			if ( isset( $input[ $key ] ) ) {
+				$current[ $key ] = JCB_Sanitizer::text( (string) $input[ $key ], $limit );
+			}
+		}
+
+		$security_textarea_keys = array(
+			'blocked_words_list'     => 20000,
+			'ip_blocklist'           => 12000,
+			'jailbreak_patterns'     => 30000,
+			'content_patterns'       => 30000,
+			'whitelist_user_tokens'  => 12000,
+			'whitelist_ips'          => 12000,
+		);
+		foreach ( $security_textarea_keys as $key => $limit ) {
+			if ( isset( $input[ $key ] ) ) {
+				$current[ $key ] = JCB_Sanitizer::textarea( (string) $input[ $key ], $limit );
+			}
+		}
+
+		$security_action_fields = array(
+			'blocked_words_action' => array( 'warn', 'block' ),
+			'auto_flag_action'     => array( 'flag', 'block' ),
+		);
+		foreach ( $security_action_fields as $key => $allowed ) {
+			if ( isset( $input[ $key ] ) ) {
+				$value = sanitize_key( (string) $input[ $key ] );
+				$current[ $key ] = in_array( $value, $allowed, true ) ? $value : $allowed[0];
+			}
+		}
+
+		$security_int_ranges = array(
+			'rate_limit_user_max'           => array( 1, 500 ),
+			'rate_limit_user_window'        => array( 1, 86400 ),
+			'rate_limit_ip_max'             => array( 1, 1000 ),
+			'rate_limit_ip_window'          => array( 1, 86400 ),
+			'rate_limit_cooldown_seconds'   => array( 0, 3600 ),
+			'message_max_chars'             => array( 50, 20000 ),
+			'auto_flag_threshold'           => array( 1, 100 ),
+			'behavior_rapid_messages'       => array( 2, 100 ),
+			'behavior_time_window'          => array( 1, 3600 ),
+			'behavior_repeated_message_max' => array( 2, 50 ),
+		);
+		foreach ( $security_int_ranges as $key => $range ) {
+			if ( isset( $input[ $key ] ) ) {
+				$current[ $key ] = JCB_Sanitizer::int_range( $input[ $key ], $range[0], $range[1] );
+			}
+		}
+
+		$security_severity_keys = array( 'jailbreak_severity', 'abuse_severity', 'content_severity', 'behavior_severity' );
+		foreach ( $security_severity_keys as $key ) {
+			if ( isset( $input[ $key ] ) ) {
+				$value = absint( $input[ $key ] );
+				$current[ $key ] = in_array( $value, array( 1, 3, 5, 10 ), true ) ? $value : 3;
+			}
+		}
+
 		$internal_text_keys = array( 'vector_store_id', 'vector_store_status', 'last_sync_at', 'last_file_id', 'last_batch_id', 'api_key_encrypted' );
 		foreach ( $internal_text_keys as $key ) {
 			if ( isset( $input[ $key ] ) ) {
@@ -284,7 +386,7 @@ class JCB_Options {
 			$current['last_file_count'] = absint( $input['last_file_count'] );
 		}
 
-		$bool_keys = array( 'frontend_enabled', 'auto_embed', 'start_open', 'show_on_home', 'show_on_pages', 'show_on_posts', 'show_on_archives', 'show_on_mobile', 'enable_file_search', 'include_sources', 'session_context_enabled', 'log_conversations', 'redact_personal_data', 'debug_mode', 'delete_data_on_uninstall', 'replace_vector_store' );
+		$bool_keys = array( 'frontend_enabled', 'auto_embed', 'start_open', 'show_on_home', 'show_on_pages', 'show_on_posts', 'show_on_archives', 'show_on_mobile', 'enable_file_search', 'include_sources', 'session_context_enabled', 'log_conversations', 'redact_personal_data', 'security_enabled', 'rate_limit_enabled', 'message_length_enabled', 'blocked_words_enabled', 'ip_blocklist_enabled', 'auto_flag_enabled', 'detect_jailbreak_enabled', 'detect_abuse_enabled', 'code_injection_enabled', 'detect_content_enabled', 'detect_behavior_enabled', 'debug_mode', 'delete_data_on_uninstall', 'replace_vector_store' );
 		foreach ( $bool_keys as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$current[ $key ] = JCB_Sanitizer::bool( $input[ $key ] );
@@ -325,6 +427,55 @@ class JCB_Options {
 
 		$current['version'] = JCB_VERSION;
 		return array_merge( self::defaults(), $current );
+	}
+
+
+	/**
+	 * Default jailbreak patterns.
+	 */
+	private static function default_jailbreak_patterns(): string {
+		return implode(
+			"\n",
+			array(
+				'ignore all previous instructions',
+				'ignore your instructions',
+				'ignore the above',
+				'disregard your instructions',
+				'disregard all previous',
+				'forget your instructions',
+				'forget all previous',
+				'pretend you are',
+				'pretend to be',
+				'DAN mode',
+				'developer mode',
+				'reveal your instructions',
+				'show your instructions',
+				'what are your instructions',
+				'system prompt',
+				'bypass safety',
+				'jailbreak',
+			)
+		);
+	}
+
+	/**
+	 * Default content flag patterns.
+	 */
+	private static function default_content_patterns(): string {
+		return implode(
+			"\n",
+			array(
+				'give me all the data',
+				'list all users',
+				'show me the database',
+				'export all data',
+				'download all files',
+				'access admin panel',
+				'admin credentials',
+				'private key',
+				'api key',
+			)
+		);
 	}
 
 	/**

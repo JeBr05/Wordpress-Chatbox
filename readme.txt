@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.7.0
+Stable tag: 0.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,7 @@ Jeroen's Chatbox gives site owners a dashboard to select content, add metadata, 
 * Custom chatbox name, welcome message, button text, colours, bubble style, preset design theme and position.
 * Conversation context.
 * Rate limits and daily token budget.
+* Security tab with message length limits, blocked words, IP blocklist, auto flag scoring, jailbreak detection, content flags, behavioral checks, whitelists and test tool.
 * Conversation analytics.
 
 == Installation ==
@@ -52,6 +53,23 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.8.0 =
+* Rebuilt the Security tab into a clearer full security dashboard.
+* Added master security switch.
+* Added configurable rate limiting by session token and IP address.
+* Added message length limits.
+* Added blocked words and phrases with warn or block action.
+* Added IP blocklist.
+* Added auto flag scoring with threshold and action settings.
+* Added jailbreak detection, abuse detection, content flags and behavioral analysis.
+* Added whitelist settings for trusted session tokens and IP addresses.
+* Added a security rule test tool.
+
+= 0.7.1 =
+* Added stronger chatbox only CSS with important rules to stop theme CSS overriding chat text colours.
+* Improved the close button shape, alignment, sizing and focus state.
+* Updated preview button and close colours to match the selected design text colour.
 
 = 0.7.0 =
 * Moved the live design preview into a right side sticky preview column.

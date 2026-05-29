@@ -65,6 +65,27 @@ class JCB_Analytics {
 		return $row;
 	}
 
+
+	/**
+	 * Get security event stats.
+	 */
+	public static function security_stats(): array {
+		global $wpdb;
+		$events   = $wpdb->prefix . 'jcb_events';
+		$since_24 = gmdate( 'Y-m-d H:i:s', time() - DAY_IN_SECONDS );
+		$since_7  = gmdate( 'Y-m-d H:i:s', time() - 7 * DAY_IN_SECONDS );
+
+		$total_flagged = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$events} WHERE event_type IN ('security_flagged','security_blocked','security_warning')" );
+		$last_24       = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$events} WHERE event_type IN ('security_flagged','security_blocked','security_warning') AND created_at >= %s", $since_24 ) );
+		$last_7        = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$events} WHERE event_type IN ('security_flagged','security_blocked','security_warning') AND created_at >= %s", $since_7 ) );
+
+		return array(
+			'total_flagged' => $total_flagged,
+			'last_24_hours' => $last_24,
+			'last_7_days'   => $last_7,
+		);
+	}
+
 	/**
 	 * Cleanup old logs.
 	 */

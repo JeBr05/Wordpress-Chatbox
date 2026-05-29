@@ -94,6 +94,16 @@ class JCB_REST_Controller {
 
 		register_rest_route(
 			JCB_REST_NAMESPACE,
+			'/security-test',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'security_test' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			JCB_REST_NAMESPACE,
 			'/analytics',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -277,6 +287,18 @@ class JCB_REST_Controller {
 	}
 
 	/**
+	 * Test security rules.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function security_test( WP_REST_Request $request ): WP_REST_Response {
+		$params  = $request->get_json_params() ?: array();
+		$message = JCB_Sanitizer::textarea( (string) ( $params['message'] ?? '' ), 20000 );
+		$result  = JCB_Security_Manager::test( $message, JCB_Options::all() );
+		return rest_ensure_response( $result );
+	}
+
+	/**
 	 * Analytics.
 	 */
 	public static function analytics(): WP_REST_Response {
@@ -289,18 +311,8 @@ class JCB_REST_Controller {
 	 * @param WP_REST_Request $request Request.
 	 */
 	public static function chat( WP_REST_Request $request ) {
-		$rate = self::rate_limit();
-		if ( is_wp_error( $rate ) ) {
-			return $rate;
-		}
-
-		$budget = self::budget_available();
-		if ( is_wp_error( $budget ) ) {
-			return $budget;
-		}
-
 		$params  = $request->get_json_params() ?: array();
-		$message = JCB_Sanitizer::textarea( (string) ( $params['message'] ?? '' ), 2000 );
+		$message = JCB_Sanitizer::textarea( (string) ( $params['message'] ?? '' ), 20000 );
 		$session = JCB_Sanitizer::text( (string) ( $params['sessionId'] ?? wp_generate_uuid4() ), 160 );
 		$page    = esc_url_raw( (string) ( $params['pageUrl'] ?? '' ) );
 
@@ -309,6 +321,16 @@ class JCB_REST_Controller {
 		}
 
 		$options = JCB_Options::all();
+
+		$security = JCB_Security_Manager::review( $message, $session, $options );
+		if ( is_wp_error( $security ) ) {
+			return $security;
+		}
+
+		$budget = self::budget_available();
+		if ( is_wp_error( $budget ) ) {
+			return $budget;
+		}
 		if ( empty( $options['api_key_encrypted'] ) ) {
 			return new WP_Error( 'jcb_not_configured', __( 'The chatbox is not configured yet.', 'jeroens-chatbox' ), array( 'status' => 503 ) );
 		}
@@ -346,6 +368,7 @@ class JCB_REST_Controller {
 				'latencyMs'  => $latency,
 				'usage'      => $result['usage'] ?? null,
 				'responseId' => $result['id'] ?? null,
+				'security'   => is_array( $security ) ? $security : null,
 			)
 		);
 	}

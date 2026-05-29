@@ -7,7 +7,7 @@ Jeroen's Chatbox supports four plugin languages.
 3. German
 4. French
 
-The language setting affects the front end chatbox labels, the default welcome message, the input placeholder, the launcher label, feedback labels and the answer language rule sent to the AI.
+The language setting affects the WordPress admin panel, the front end chatbox labels, the default welcome message, the input placeholder, the launcher label, feedback labels and the answer language rule sent to the AI.
 
 ## How to change it
 
@@ -17,3 +17,8 @@ The language setting affects the front end chatbox labels, the default welcome m
 4. Save settings.
 
 If the welcome message, placeholder, launcher label and instructions still use plugin default text, they are updated to the selected language. If you already customized those fields, your custom text is kept.
+
+
+## Admin panel language
+
+The admin panel uses the same plugin language setting. After saving a new language, the admin page reloads so the tabs, cards, labels, notices and buttons use the selected language.

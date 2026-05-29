@@ -79,8 +79,15 @@ class JCB_Options {
 			'assistantName'  => $options['assistant_name'],
 			'welcomeMessage' => $options['welcome_message'],
 			'placeholder'    => $options['placeholder'],
-			'accentColor'    => $options['accent_color'],
-			'position'       => $options['launcher_position'],
+			'accentColor'              => $options['accent_color'],
+			'fontColor'                => $options['font_color'],
+			'backgroundColor'          => $options['background_color'],
+			'userBubbleColor'          => $options['user_bubble_color'],
+			'userBubbleTextColor'      => $options['user_bubble_text_color'],
+			'assistantBubbleColor'     => $options['assistant_bubble_color'],
+			'assistantBubbleTextColor' => $options['assistant_bubble_text_color'],
+			'bubbleStyle'              => $options['bubble_style'],
+			'position'                 => $options['launcher_position'],
 			'launcherLabel'  => $options['launcher_label'],
 			'startOpen'      => (bool) $options['start_open'],
 			'zIndex'         => (int) $options['z_index'],
@@ -103,6 +110,13 @@ class JCB_Options {
 			'welcome_message'          => JCB_Language::text( 'welcome_message', 'en' ),
 			'placeholder'              => JCB_Language::text( 'placeholder', 'en' ),
 			'accent_color'             => '#6f5bd6',
+			'font_color'               => '#111827',
+			'background_color'         => '#f8fafc',
+			'user_bubble_color'        => '#6f5bd6',
+			'user_bubble_text_color'   => '#ffffff',
+			'assistant_bubble_color'   => '#ffffff',
+			'assistant_bubble_text_color' => '#111827',
+			'bubble_style'             => 'soft',
 			'launcher_position'        => 'right',
 			'launcher_label'           => JCB_Language::text( 'launcher_label', 'en' ),
 			'frontend_enabled'         => true,
@@ -201,8 +215,23 @@ class JCB_Options {
 		if ( isset( $input['placeholder'] ) ) {
 			$current['placeholder'] = JCB_Sanitizer::text( (string) $input['placeholder'], 100 );
 		}
-		if ( isset( $input['accent_color'] ) ) {
-			$current['accent_color'] = JCB_Sanitizer::color( (string) $input['accent_color'] );
+		$color_fields = array(
+			'accent_color'                 => '#6f5bd6',
+			'font_color'                   => '#111827',
+			'background_color'             => '#f8fafc',
+			'user_bubble_color'            => '#6f5bd6',
+			'user_bubble_text_color'       => '#ffffff',
+			'assistant_bubble_color'       => '#ffffff',
+			'assistant_bubble_text_color'  => '#111827',
+		);
+		foreach ( $color_fields as $key => $fallback ) {
+			if ( isset( $input[ $key ] ) ) {
+				$current[ $key ] = JCB_Sanitizer::color( (string) $input[ $key ], $fallback );
+			}
+		}
+		if ( isset( $input['bubble_style'] ) ) {
+			$bubble_style = sanitize_key( (string) $input['bubble_style'] );
+			$current['bubble_style'] = in_array( $bubble_style, array( 'soft', 'round', 'square' ), true ) ? $bubble_style : 'soft';
 		}
 		if ( isset( $input['launcher_position'] ) ) {
 			$current['launcher_position'] = 'left' === $input['launcher_position'] ? 'left' : 'right';

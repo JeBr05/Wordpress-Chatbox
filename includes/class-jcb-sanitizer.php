@@ -37,9 +37,10 @@ class JCB_Sanitizer {
 	 *
 	 * @param string $value Input value.
 	 */
-	public static function color( string $value ): string {
+	public static function color( string $value, string $fallback = '#6f5bd6' ): string {
 		$color = sanitize_hex_color( $value );
-		return $color ? $color : '#6f5bd6';
+		$fallback = sanitize_hex_color( $fallback );
+		return $color ? $color : ( $fallback ? $fallback : '#6f5bd6' );
 	}
 
 	/**

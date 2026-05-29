@@ -80,8 +80,15 @@
       ...(config.strings || {}),
     };
     root.style.setProperty('--jcb-chat-accent', config.accentColor || '#6f5bd6');
+    root.style.setProperty('--jcb-chat-font-color', config.fontColor || '#111827');
+    root.style.setProperty('--jcb-chat-background-color', config.backgroundColor || '#f8fafc');
+    root.style.setProperty('--jcb-chat-user-bubble-color', config.userBubbleColor || config.accentColor || '#6f5bd6');
+    root.style.setProperty('--jcb-chat-user-bubble-text-color', config.userBubbleTextColor || '#ffffff');
+    root.style.setProperty('--jcb-chat-assistant-bubble-color', config.assistantBubbleColor || '#ffffff');
+    root.style.setProperty('--jcb-chat-assistant-bubble-text-color', config.assistantBubbleTextColor || '#111827');
     root.style.setProperty('--jcb-chat-z-index', String(config.zIndex || 99999));
     root.dataset.position = config.position || 'right';
+    root.dataset.bubbleStyle = config.bubbleStyle || 'soft';
 
     root.innerHTML = `
       <button class="jcb-chat-launcher" type="button">${escapeHtml(config.launcherLabel || 'Chat')}</button>

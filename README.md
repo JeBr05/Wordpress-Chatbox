@@ -10,7 +10,7 @@ Jeroen's Chatbox is a WordPress plugin that lets site owners build a chatbox fro
 4. Publish the chatbox with the shortcode `[jeroens_chatbox]` or site wide auto embed.
 5. Control visibility for home page, pages, posts, archives and mobile.
 6. Exclude specific page IDs or URL paths.
-7. Change the chatbox name, welcome message, button text, colours, bubble style and position.
+7. Change the chatbox name, welcome message, button text, colours, bubble style, design theme and position.
 8. Select English, Dutch, German or French for the admin panel, chatbox interface and AI answer rule.
 9. Protect usage with nonces, rate limits and a daily token budget.
 10. View analytics and recent messages when logging is enabled.
@@ -62,7 +62,7 @@ Open Chatbox or Settings to select English, Dutch, German or French. The setting
 
 ## Design options
 
-Open Design to edit the accent colour, font colour, chat background colour, user bubble colour, assistant bubble colour and bubble style. The preview updates after saving.
+Open Design to edit the accent colour, font colour, chat background colour, user bubble colour, assistant bubble colour, bubble style and preset design themes. The preview updates while selecting colours and presets. The website only changes after saving.
 
 ## Notes
 

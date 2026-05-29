@@ -9,6 +9,7 @@
   const restUrl = window.JCB_ADMIN.restUrl;
   const nonce = window.JCB_ADMIN.nonce;
   const strings = window.JCB_ADMIN.adminStrings || {};
+  const users = window.JCB_ADMIN.users || [];
   const languages = window.JCB_ADMIN.languages || [
     { code: 'en', name: 'English', native: 'English' },
     { code: 'nl', name: 'Dutch', native: 'Nederlands' },
@@ -20,6 +21,102 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const t = (key, fallback = '') => strings[key] || fallback || key;
   const sprintf = (key, fallback, ...values) => values.reduce((message, value) => message.replace('%s', String(value)), t(key, fallback));
+
+
+  const designThemes = () => [
+    {
+      id: 'purple',
+      label: t('theme_purple', 'Classic purple'),
+      description: t('theme_purple_desc', 'Bright, simple and close to the default look.'),
+      colors: {
+        accent_color: '#6f5bd6',
+        font_color: '#111827',
+        background_color: '#f8fafc',
+        user_bubble_color: '#6f5bd6',
+        user_bubble_text_color: '#ffffff',
+        assistant_bubble_color: '#ffffff',
+        assistant_bubble_text_color: '#111827',
+      },
+      bubble_style: 'soft',
+    },
+    {
+      id: 'ocean',
+      label: t('theme_ocean', 'Ocean blue'),
+      description: t('theme_ocean_desc', 'Clean blue colours for service and support sites.'),
+      colors: {
+        accent_color: '#2563eb',
+        font_color: '#0f172a',
+        background_color: '#eff6ff',
+        user_bubble_color: '#2563eb',
+        user_bubble_text_color: '#ffffff',
+        assistant_bubble_color: '#ffffff',
+        assistant_bubble_text_color: '#0f172a',
+      },
+      bubble_style: 'round',
+    },
+    {
+      id: 'forest',
+      label: t('theme_forest', 'Forest green'),
+      description: t('theme_forest_desc', 'Calm green colours for natural or sustainable brands.'),
+      colors: {
+        accent_color: '#047857',
+        font_color: '#0f172a',
+        background_color: '#ecfdf5',
+        user_bubble_color: '#047857',
+        user_bubble_text_color: '#ffffff',
+        assistant_bubble_color: '#ffffff',
+        assistant_bubble_text_color: '#0f172a',
+      },
+      bubble_style: 'soft',
+    },
+    {
+      id: 'midnight',
+      label: t('theme_midnight', 'Midnight dark'),
+      description: t('theme_midnight_desc', 'Dark interface with clear contrast.'),
+      colors: {
+        accent_color: '#8b5cf6',
+        font_color: '#f8fafc',
+        background_color: '#0f172a',
+        user_bubble_color: '#8b5cf6',
+        user_bubble_text_color: '#ffffff',
+        assistant_bubble_color: '#1e293b',
+        assistant_bubble_text_color: '#f8fafc',
+      },
+      bubble_style: 'soft',
+    },
+    {
+      id: 'sand',
+      label: t('theme_sand', 'Warm sand'),
+      description: t('theme_sand_desc', 'Warm colours for a softer website style.'),
+      colors: {
+        accent_color: '#b45309',
+        font_color: '#1f2937',
+        background_color: '#fff7ed',
+        user_bubble_color: '#b45309',
+        user_bubble_text_color: '#ffffff',
+        assistant_bubble_color: '#ffffff',
+        assistant_bubble_text_color: '#1f2937',
+      },
+      bubble_style: 'soft',
+    },
+  ];
+
+  const designColorKeys = [
+    'accent_color',
+    'font_color',
+    'background_color',
+    'user_bubble_color',
+    'user_bubble_text_color',
+    'assistant_bubble_color',
+    'assistant_bubble_text_color',
+  ];
+
+  const isHexColor = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || '').trim());
+
+  const normalizeHexColor = (value, fallback = '#000000') => {
+    const color = String(value || '').trim();
+    return isHexColor(color) ? color.toLowerCase() : fallback;
+  };
 
   const api = async (path, options = {}) => {
     const response = await fetch(`${restUrl}${path}`, {
@@ -191,7 +288,69 @@
     ${help ? `<p>${escapeHtml(help)}</p>` : ''}
   `;
 
-  const colorField = (label, key) => field(label, key, 'color');
+  const selectedVisibilityUsers = () => String(state.settings.visibility_user_ids || '')
+    .split(/[\s,]+/)
+    .map((id) => Number(id))
+    .filter((id) => id > 0);
+
+  const visibilityUserPicker = () => {
+    const selected = selectedVisibilityUsers();
+    return `
+      <div class="jcb-user-picker">
+        ${users.length ? users.map((user) => {
+          const label = user.label || user.login || `User ${user.id}`;
+          const meta = [user.login, user.email].filter(Boolean).join(' · ');
+          return `
+            <label class="jcb-user-option">
+              <input type="checkbox" data-visibility-user value="${escapeHtml(user.id)}" ${selected.includes(Number(user.id)) ? 'checked' : ''}>
+              <span>
+                <strong>${escapeHtml(label)}</strong>
+                <small>${escapeHtml(meta)}</small>
+              </span>
+            </label>
+          `;
+        }).join('') : `<p>${escapeHtml(t('no_users_found', 'No WordPress users found.'))}</p>`}
+      </div>
+      <input type="hidden" data-setting="visibility_user_ids" value="${escapeHtml(state.settings.visibility_user_ids || '')}">
+    `;
+  };
+
+  const syncVisibilityUsers = (panel) => {
+    const input = $('[data-setting="visibility_user_ids"]', panel);
+    if (!input) return;
+    const ids = $$('[data-visibility-user]:checked', panel).map((box) => box.value);
+    input.value = ids.join(',');
+  };
+
+  const colorField = (label, key) => {
+    const value = normalizeHexColor(state.settings[key], '#000000');
+    return `
+      <label class="jcb-color-label">${escapeHtml(label)}
+        <div class="jcb-color-control" data-color-control="${escapeHtml(key)}">
+          <span class="jcb-color-swatch" data-color-swatch="${escapeHtml(key)}" style="background:${escapeHtml(value)}"></span>
+          <input class="jcb-color-picker" type="color" data-setting="${escapeHtml(key)}" data-design-live="1" value="${escapeHtml(value)}" aria-label="${escapeHtml(label)}">
+          <input class="jcb-color-hex" type="text" data-color-hex="${escapeHtml(key)}" data-design-live="1" value="${escapeHtml(value)}" aria-label="${escapeHtml(t('hex_value', 'Hex value'))}">
+        </div>
+      </label>
+    `;
+  };
+
+  const designThemeCards = () => `
+    <div class="jcb-theme-grid">
+      ${designThemes().map((theme) => {
+        const active = (state.settings.design_theme || 'custom') === theme.id;
+        return `
+          <button class="jcb-theme-card ${active ? 'is-active' : ''}" type="button" data-design-theme="${escapeHtml(theme.id)}">
+            <span class="jcb-theme-title">${escapeHtml(theme.label)}</span>
+            <span class="jcb-theme-swatches">
+              ${Object.values(theme.colors).slice(0, 5).map((color) => `<span style="background:${escapeHtml(color)}"></span>`).join('')}
+            </span>
+            <span class="jcb-theme-description">${escapeHtml(theme.description)}</span>
+          </button>
+        `;
+      }).join('')}
+    </div>
+  `;
 
   const saveButton = () => `<div class="jcb-form-actions"><button class="button button-primary" data-save-settings type="button">${escapeHtml(t('save_settings', 'Save settings'))}</button></div>`;
 
@@ -254,6 +413,20 @@
             <h2>${escapeHtml(t('website_visibility', 'Website visibility'))}</h2>
             ${checkbox(t('frontend_enabled', "Enable Jeroen's Chatbox on the front end"), 'frontend_enabled', t('frontend_enabled_help', 'Turn this off to hide the chatbox everywhere.'))}
             ${checkbox(t('auto_embed', 'Auto embed a floating chatbox on public pages'), 'auto_embed', t('auto_embed_help', 'Turn this on if you want the chatbox visible without placing a shortcode.'))}
+            <label>${escapeHtml(t('who_can_see_chatbox', 'Who can see the chatbox'))}
+              <select data-setting="visibility_mode">
+                <option value="everyone" ${state.settings.visibility_mode === 'everyone' ? 'selected' : ''}>${escapeHtml(t('visibility_everyone', 'Everyone who visits the website'))}</option>
+                <option value="logged_in" ${state.settings.visibility_mode === 'logged_in' ? 'selected' : ''}>${escapeHtml(t('visibility_logged_in', 'All logged in WordPress users'))}</option>
+                <option value="admins" ${state.settings.visibility_mode === 'admins' ? 'selected' : ''}>${escapeHtml(t('visibility_admins', 'Only administrators'))}</option>
+                <option value="selected_users" ${state.settings.visibility_mode === 'selected_users' ? 'selected' : ''}>${escapeHtml(t('visibility_selected_users', 'Only selected WordPress users'))}</option>
+              </select>
+            </label>
+            <p>${escapeHtml(t('who_can_see_help', 'Use selected users or administrators only while testing. Switch to everyone when you want to publish it.'))}</p>
+            <div class="jcb-selected-users-wrap ${state.settings.visibility_mode === 'selected_users' ? '' : 'jcb-hidden'}" data-selected-users-wrap>
+              <h3>${escapeHtml(t('selected_test_users', 'Selected test users'))}</h3>
+              <p>${escapeHtml(t('selected_test_users_help', 'These users must be logged in before they can see the chatbox.'))}</p>
+              ${visibilityUserPicker()}
+            </div>
             ${checkbox(t('start_open', 'Open the chatbox by default'), 'start_open')}
             ${checkbox(t('show_on_mobile', 'Show on mobile'), 'show_on_mobile')}
             ${field(t('launcher_button_text', 'Launcher button text'), 'launcher_label')}
@@ -287,11 +460,12 @@
 
     if (panelName === 'design') {
       panel.innerHTML = `
-        <div class="jcb-grid jcb-grid-two">
-          <section class="jcb-card">
+        <div class="jcb-design-layout">
+          <section class="jcb-card jcb-design-settings-card">
             <h2>${escapeHtml(t('chat_design', 'Chat design'))}</h2>
             ${field(t('welcome_message_label', 'Welcome message'), 'welcome_message')}
             ${field(t('input_placeholder', 'Input placeholder'), 'placeholder')}
+            <input type="hidden" data-setting="design_theme" data-design-theme-value value="${escapeHtml(state.settings.design_theme || 'custom')}">
             ${colorField(t('accent_color', 'Accent color'), 'accent_color')}
             ${colorField(t('font_color', 'Font colour'), 'font_color')}
             ${colorField(t('background_color', 'Background colour'), 'background_color')}
@@ -300,7 +474,7 @@
             ${colorField(t('assistant_bubble_color', 'Assistant bubble colour'), 'assistant_bubble_color')}
             ${colorField(t('assistant_bubble_text_color', 'Assistant bubble text colour'), 'assistant_bubble_text_color')}
             <label>${escapeHtml(t('bubble_style', 'Chat bubble style'))}
-              <select data-setting="bubble_style">
+              <select data-setting="bubble_style" data-design-live="1">
                 <option value="soft" ${state.settings.bubble_style === 'soft' ? 'selected' : ''}>${escapeHtml(t('bubble_style_soft', 'Soft rounded'))}</option>
                 <option value="round" ${state.settings.bubble_style === 'round' ? 'selected' : ''}>${escapeHtml(t('bubble_style_round', 'Round'))}</option>
                 <option value="square" ${state.settings.bubble_style === 'square' ? 'selected' : ''}>${escapeHtml(t('bubble_style_square', 'Square'))}</option>
@@ -314,16 +488,38 @@
             </label>
             ${saveButton()}
           </section>
-          <section class="jcb-card">
-            <h2>${escapeHtml(t('preview', 'Preview'))}</h2>
-            <div class="jcb-preview" data-bubble-style="${escapeHtml(state.settings.bubble_style || 'soft')}" style="--jcb-preview-accent:${escapeHtml(state.settings.accent_color || '#6f5bd6')};--jcb-preview-font:${escapeHtml(state.settings.font_color || '#111827')};--jcb-preview-bg:${escapeHtml(state.settings.background_color || '#f8fafc')};--jcb-preview-user-bg:${escapeHtml(state.settings.user_bubble_color || state.settings.accent_color || '#6f5bd6')};--jcb-preview-user-text:${escapeHtml(state.settings.user_bubble_text_color || '#ffffff')};--jcb-preview-assistant-bg:${escapeHtml(state.settings.assistant_bubble_color || '#ffffff')};--jcb-preview-assistant-text:${escapeHtml(state.settings.assistant_bubble_text_color || '#111827')};">
-              <div class="jcb-preview-title">${escapeHtml(state.settings.assistant_name || "Jeroen's Chatbox")}</div>
-              <div class="jcb-preview-bubble assistant">${escapeHtml(state.settings.welcome_message || '')}</div>
-              <div class="jcb-preview-bubble user">${escapeHtml(t('preview_user_message', 'I have a question.'))}</div>
-              <button>${escapeHtml(state.settings.launcher_label || 'Chat')}</button>
-            </div>
-          </section>
+          <aside class="jcb-design-side">
+            <section class="jcb-card jcb-preview-card">
+              <h2>${escapeHtml(t('preview', 'Preview'))}</h2>
+              <p>${escapeHtml(t('preview_live_note', 'This preview updates while you edit. Your website changes only after saving.'))}</p>
+              <div class="jcb-preview-shell">
+                <div class="jcb-preview" data-design-preview data-bubble-style="${escapeHtml(state.settings.bubble_style || 'soft')}" style="--jcb-preview-accent:${escapeHtml(state.settings.accent_color || '#6f5bd6')};--jcb-preview-font:${escapeHtml(state.settings.font_color || '#111827')};--jcb-preview-bg:${escapeHtml(state.settings.background_color || '#f8fafc')};--jcb-preview-user-bg:${escapeHtml(state.settings.user_bubble_color || state.settings.accent_color || '#6f5bd6')};--jcb-preview-user-text:${escapeHtml(state.settings.user_bubble_text_color || '#ffffff')};--jcb-preview-assistant-bg:${escapeHtml(state.settings.assistant_bubble_color || '#ffffff')};--jcb-preview-assistant-text:${escapeHtml(state.settings.assistant_bubble_text_color || '#111827')};">
+                  <div class="jcb-preview-window">
+                    <div class="jcb-preview-header">
+                      <span>${escapeHtml(state.settings.assistant_name || "Jeroen's Chatbox")}</span>
+                      <span>×</span>
+                    </div>
+                    <div class="jcb-preview-messages">
+                      <div class="jcb-preview-bubble assistant" data-preview-welcome>${escapeHtml(state.settings.welcome_message || '')}</div>
+                      <div class="jcb-preview-bubble user">${escapeHtml(t('preview_user_message', 'I have a question.'))}</div>
+                    </div>
+                    <div class="jcb-preview-form">
+                      <span data-preview-placeholder>${escapeHtml(state.settings.placeholder || '')}</span>
+                      <button type="button">${escapeHtml(t('send', 'Send'))}</button>
+                    </div>
+                  </div>
+                  <button class="jcb-preview-launcher" type="button">${escapeHtml(state.settings.launcher_label || 'Chat')}</button>
+                </div>
+              </div>
+            </section>
+            <section class="jcb-card">
+              <h2>${escapeHtml(t('design_presets', 'Preset design themes'))}</h2>
+              <p>${escapeHtml(t('design_preset_help', 'Choose a theme to fill the colour settings. The website only changes after you save.'))}</p>
+              ${designThemeCards()}
+            </section>
+          </aside>
         </div>`;
+      renderDesignPreview(panel);
     }
 
     if (panelName === 'security') {
@@ -389,14 +585,95 @@
           <section class="jcb-card">
             <h2>${escapeHtml(t('developer_notes', 'Developer notes'))}</h2>
             <p>${escapeHtml(t('rest_namespace', 'REST namespace'))}: ${escapeHtml(restUrl)}</p>
-            <p>${escapeHtml(t('plugin_version', 'Plugin version'))}: ${escapeHtml(window.JCB_ADMIN.settings?.version || '0.5.0')}</p>
+            <p>${escapeHtml(t('plugin_version', 'Plugin version'))}: ${escapeHtml(window.JCB_ADMIN.settings?.version || '0.7.0')}</p>
           </section>
         </div>`;
     }
   };
 
+  const getDesignPanel = (root = document) => $('[data-panel="design"]', root);
+
+  const markCustomTheme = (panel) => {
+    const input = $('[data-design-theme-value]', panel);
+    if (input) input.value = 'custom';
+    $$('.jcb-theme-card', panel).forEach((card) => card.classList.remove('is-active'));
+  };
+
+  const syncColorControl = (input) => {
+    const panel = getDesignPanel();
+    if (!panel) return;
+    const key = input.dataset.setting || input.dataset.colorHex;
+    if (!key) return;
+    const picker = $(`[data-setting="${key}"]`, panel);
+    const hex = $(`[data-color-hex="${key}"]`, panel);
+    const swatch = $(`[data-color-swatch="${key}"]`, panel);
+
+    if (input.dataset.colorHex) {
+      const value = String(input.value || '').trim();
+      if (isHexColor(value) && picker) picker.value = value;
+    }
+
+    const current = normalizeHexColor(picker?.value || hex?.value, '#000000');
+    if (hex && hex !== input) hex.value = current;
+    if (swatch) swatch.style.background = current;
+  };
+
+  const designValuesFromPanel = (panel) => {
+    const values = { ...state.settings };
+    designColorKeys.forEach((key) => {
+      values[key] = normalizeHexColor($(`[data-setting="${key}"]`, panel)?.value, state.settings[key] || '#000000');
+    });
+    values.bubble_style = $('[data-setting="bubble_style"]', panel)?.value || state.settings.bubble_style || 'soft';
+    values.welcome_message = $('[data-setting="welcome_message"]', panel)?.value || state.settings.welcome_message || '';
+    values.placeholder = $('[data-setting="placeholder"]', panel)?.value || state.settings.placeholder || '';
+    return values;
+  };
+
+  const renderDesignPreview = (panel = getDesignPanel()) => {
+    if (!panel) return;
+    const preview = $('[data-design-preview]', panel);
+    if (!preview) return;
+    const values = designValuesFromPanel(panel);
+    preview.style.setProperty('--jcb-preview-accent', values.accent_color || '#6f5bd6');
+    preview.style.setProperty('--jcb-preview-font', values.font_color || '#111827');
+    preview.style.setProperty('--jcb-preview-bg', values.background_color || '#f8fafc');
+    preview.style.setProperty('--jcb-preview-user-bg', values.user_bubble_color || values.accent_color || '#6f5bd6');
+    preview.style.setProperty('--jcb-preview-user-text', values.user_bubble_text_color || '#ffffff');
+    preview.style.setProperty('--jcb-preview-assistant-bg', values.assistant_bubble_color || '#ffffff');
+    preview.style.setProperty('--jcb-preview-assistant-text', values.assistant_bubble_text_color || '#111827');
+    preview.dataset.bubbleStyle = values.bubble_style || 'soft';
+    const welcome = $('[data-preview-welcome]', panel);
+    const placeholder = $('[data-preview-placeholder]', panel);
+    if (welcome) welcome.textContent = values.welcome_message || '';
+    if (placeholder) placeholder.textContent = values.placeholder || '';
+  };
+
+  const applyDesignTheme = (themeId) => {
+    const panel = getDesignPanel();
+    if (!panel) return;
+    const theme = designThemes().find((item) => item.id === themeId);
+    if (!theme) return;
+    Object.entries(theme.colors).forEach(([key, value]) => {
+      const picker = $(`[data-setting="${key}"]`, panel);
+      const hex = $(`[data-color-hex="${key}"]`, panel);
+      const swatch = $(`[data-color-swatch="${key}"]`, panel);
+      if (picker) picker.value = value;
+      if (hex) hex.value = value;
+      if (swatch) swatch.style.background = value;
+    });
+    const style = $('[data-setting="bubble_style"]', panel);
+    if (style) style.value = theme.bubble_style;
+    const themeInput = $('[data-design-theme-value]', panel);
+    if (themeInput) themeInput.value = theme.id;
+    $$('.jcb-theme-card', panel).forEach((card) => card.classList.toggle('is-active', card.dataset.designTheme === theme.id));
+    renderDesignPreview(panel);
+  };
+
   const saveSettings = async (button) => {
     const panel = button.closest('.jcb-panel');
+    if (panel?.dataset.panel === 'channels') {
+      syncVisibilityUsers(panel);
+    }
     const payload = {};
     const previousLanguage = state.settings.plugin_language;
     $$('[data-setting]', panel).forEach((input) => {
@@ -516,6 +793,9 @@
       toggleInclude(id, event.target.checked).catch((error) => notice(error.message, 'error'));
     }
 
+    const themeButton = event.target.closest('[data-design-theme]');
+    if (themeButton) applyDesignTheme(themeButton.dataset.designTheme);
+
     if (event.target.matches('[data-save-settings]')) saveSettings(event.target);
     if (event.target.matches('[data-test-api]')) testApi(event.target);
     if (event.target.matches('[data-check-sync]')) checkSync(event.target);
@@ -528,6 +808,40 @@
 
   document.addEventListener('input', (event) => {
     if (event.target.matches('#jcb-content-search')) renderContentList();
+    const designPanel = event.target.closest('[data-panel="design"]');
+    if (designPanel) {
+      if (event.target.matches('[data-setting], [data-color-hex]')) {
+        syncColorControl(event.target);
+        if (!event.target.matches('[data-design-theme-value]')) {
+          markCustomTheme(designPanel);
+        }
+      }
+      renderDesignPreview(designPanel);
+    }
+  });
+
+  document.addEventListener('change', (event) => {
+    const channelsPanel = event.target.closest('[data-panel="channels"]');
+    if (channelsPanel) {
+      if (event.target.matches('[data-visibility-user]')) {
+        syncVisibilityUsers(channelsPanel);
+      }
+      if (event.target.matches('[data-setting="visibility_mode"]')) {
+        const wrap = $('[data-selected-users-wrap]', channelsPanel);
+        if (wrap) wrap.classList.toggle('jcb-hidden', event.target.value !== 'selected_users');
+      }
+    }
+
+    const designPanel = event.target.closest('[data-panel="design"]');
+    if (designPanel) {
+      if (event.target.matches('[data-setting], [data-color-hex]')) {
+        syncColorControl(event.target);
+        if (!event.target.matches('[data-design-theme-value]')) {
+          markCustomTheme(designPanel);
+        }
+      }
+      renderDesignPreview(designPanel);
+    }
   });
 
   document.addEventListener('submit', (event) => {

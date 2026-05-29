@@ -38,7 +38,7 @@ class JCB_Shortcode {
 	public static function render_shortcode( $atts = array() ): string {
 		$options = JCB_Options::all();
 
-		if ( empty( $options['frontend_enabled'] ) ) {
+		if ( empty( $options['frontend_enabled'] ) || ! self::allowed_for_current_visitor( $options ) ) {
 			return '';
 		}
 
@@ -63,11 +63,47 @@ class JCB_Shortcode {
 			return;
 		}
 
+		if ( ! self::allowed_for_current_visitor( $options ) ) {
+			return;
+		}
+
 		if ( ! self::allowed_on_current_page( $options ) ) {
 			return;
 		}
 
 		echo self::render_shortcode();
+	}
+
+	/**
+	 * Check visitor visibility rules.
+	 *
+	 * @param array $options Plugin options.
+	 */
+	private static function allowed_for_current_visitor( array $options ): bool {
+		$mode = isset( $options['visibility_mode'] ) ? sanitize_key( (string) $options['visibility_mode'] ) : 'everyone';
+
+		if ( 'everyone' === $mode ) {
+			return true;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		if ( 'logged_in' === $mode ) {
+			return true;
+		}
+
+		if ( 'admins' === $mode ) {
+			return current_user_can( 'manage_options' );
+		}
+
+		if ( 'selected_users' === $mode ) {
+			$user_ids = self::parse_id_list( (string) ( $options['visibility_user_ids'] ?? '' ) );
+			return in_array( get_current_user_id(), $user_ids, true );
+		}
+
+		return true;
 	}
 
 	/**

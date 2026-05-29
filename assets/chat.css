@@ -127,7 +127,7 @@
   display: flex;
   gap: 8px;
   padding: 14px;
-  background: #ffffff;
+  background: var(--jcb-chat-bg);
   border-top: 1px solid var(--jcb-chat-border);
 }
 
@@ -136,7 +136,8 @@
   border: 1px solid var(--jcb-chat-border);
   border-radius: 999px;
   padding: 12px 14px;
-  color: var(--jcb-chat-text);
+  background: var(--jcb-chat-assistant-bubble-color);
+  color: var(--jcb-chat-assistant-bubble-text-color);
 }
 
 .jcb-chat-send {

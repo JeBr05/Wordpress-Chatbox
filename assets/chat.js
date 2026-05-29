@@ -82,6 +82,7 @@
     root.style.setProperty('--jcb-chat-accent', config.accentColor || '#6f5bd6');
     root.style.setProperty('--jcb-chat-font-color', config.fontColor || '#111827');
     root.style.setProperty('--jcb-chat-background-color', config.backgroundColor || '#f8fafc');
+    root.style.setProperty('--jcb-chat-bg', config.backgroundColor || '#ffffff');
     root.style.setProperty('--jcb-chat-user-bubble-color', config.userBubbleColor || config.accentColor || '#6f5bd6');
     root.style.setProperty('--jcb-chat-user-bubble-text-color', config.userBubbleTextColor || '#ffffff');
     root.style.setProperty('--jcb-chat-assistant-bubble-color', config.assistantBubbleColor || '#ffffff');

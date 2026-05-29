@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.5.0
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,10 +23,10 @@ Jeroen's Chatbox gives site owners a dashboard to select content, add metadata, 
 * Site wide auto embed.
 * Language setting for English, Dutch, German and French.
 * Admin panel language support for English, Dutch, German and French.
-* Design controls for font colour, background colour and chat bubbles.
-* Visibility settings for home page, pages, posts, archives and mobile.
+* Design controls for font colour, background colour, chat bubbles, live preview and preset themes.
+* Visibility settings for everyone, logged in users, admins only, selected users, home page, pages, posts, archives and mobile.
 * Exclude page IDs and URL paths.
-* Custom chatbox name, welcome message, button text, colours, bubble style and position.
+* Custom chatbox name, welcome message, button text, colours, bubble style, preset design theme and position.
 * Conversation context.
 * Rate limits and daily token budget.
 * Conversation analytics.
@@ -52,6 +52,18 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.7.0 =
+* Moved the live design preview into a right side sticky preview column.
+* Added clearer design layout with preview above preset themes.
+* Added visitor visibility controls for everyone, logged in users, admins only or selected WordPress users.
+* Added selected WordPress user picker for testing the chatbox before public launch.
+
+= 0.6.0 =
+* Replaced unclear full width colour bars with clear swatch, picker and hex controls.
+* Added live design preview while editing colours and bubble style.
+* Added preset design themes.
+* Saved design changes still only affect the public website after saving.
 
 = 0.5.0 =
 * Added font colour and background colour settings.

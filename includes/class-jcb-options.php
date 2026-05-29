@@ -87,6 +87,7 @@ class JCB_Options {
 			'assistantBubbleColor'     => $options['assistant_bubble_color'],
 			'assistantBubbleTextColor' => $options['assistant_bubble_text_color'],
 			'bubbleStyle'              => $options['bubble_style'],
+			'designTheme'              => $options['design_theme'],
 			'position'                 => $options['launcher_position'],
 			'launcherLabel'  => $options['launcher_label'],
 			'startOpen'      => (bool) $options['start_open'],
@@ -117,9 +118,12 @@ class JCB_Options {
 			'assistant_bubble_color'   => '#ffffff',
 			'assistant_bubble_text_color' => '#111827',
 			'bubble_style'             => 'soft',
+			'design_theme'             => 'custom',
 			'launcher_position'        => 'right',
 			'launcher_label'           => JCB_Language::text( 'launcher_label', 'en' ),
 			'frontend_enabled'         => true,
+			'visibility_mode'          => 'everyone',
+			'visibility_user_ids'      => '',
 			'auto_embed'               => false,
 			'start_open'               => false,
 			'show_on_home'             => true,
@@ -233,11 +237,25 @@ class JCB_Options {
 			$bubble_style = sanitize_key( (string) $input['bubble_style'] );
 			$current['bubble_style'] = in_array( $bubble_style, array( 'soft', 'round', 'square' ), true ) ? $bubble_style : 'soft';
 		}
+		if ( isset( $input['design_theme'] ) ) {
+			$design_theme = sanitize_key( (string) $input['design_theme'] );
+			$allowed_design_themes = array( 'custom', 'purple', 'ocean', 'forest', 'midnight', 'sand' );
+			$current['design_theme'] = in_array( $design_theme, $allowed_design_themes, true ) ? $design_theme : 'custom';
+		}
 		if ( isset( $input['launcher_position'] ) ) {
 			$current['launcher_position'] = 'left' === $input['launcher_position'] ? 'left' : 'right';
 		}
 		if ( isset( $input['launcher_label'] ) ) {
 			$current['launcher_label'] = JCB_Sanitizer::text( (string) $input['launcher_label'], 40 );
+		}
+
+		if ( isset( $input['visibility_mode'] ) ) {
+			$visibility_mode = sanitize_key( (string) $input['visibility_mode'] );
+			$allowed_visibility_modes = array( 'everyone', 'logged_in', 'admins', 'selected_users' );
+			$current['visibility_mode'] = in_array( $visibility_mode, $allowed_visibility_modes, true ) ? $visibility_mode : 'everyone';
+		}
+		if ( isset( $input['visibility_user_ids'] ) ) {
+			$current['visibility_user_ids'] = self::sanitize_id_list( (string) $input['visibility_user_ids'] );
 		}
 
 		if ( $language_changed ) {

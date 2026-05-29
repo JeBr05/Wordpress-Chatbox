@@ -143,6 +143,46 @@ class JCB_REST_Controller {
 		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new WP_Error( 'jcb_bad_nonce', __( 'Security check failed. Refresh the page and try again.', 'jeroens-chatbox' ), array( 'status' => 403 ) );
 		}
+
+		if ( ! self::visible_to_current_user() ) {
+			return new WP_Error( 'jcb_not_visible', __( 'The chatbox is not available for this visitor.', 'jeroens-chatbox' ), array( 'status' => 403 ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check visitor level access for public chat routes.
+	 */
+	private static function visible_to_current_user(): bool {
+		$options = JCB_Options::all();
+		if ( empty( $options['frontend_enabled'] ) ) {
+			return false;
+		}
+
+		$mode = isset( $options['visibility_mode'] ) ? sanitize_key( (string) $options['visibility_mode'] ) : 'everyone';
+		if ( 'everyone' === $mode ) {
+			return true;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		if ( 'logged_in' === $mode ) {
+			return true;
+		}
+
+		if ( 'admins' === $mode ) {
+			return current_user_can( 'manage_options' );
+		}
+
+		if ( 'selected_users' === $mode ) {
+			$ids = preg_split( '/[\s,]+/', (string) ( $options['visibility_user_ids'] ?? '' ) );
+			$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+			return in_array( get_current_user_id(), $ids, true );
+		}
+
 		return true;
 	}
 

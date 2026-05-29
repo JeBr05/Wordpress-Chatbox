@@ -48,6 +48,7 @@ class JCB_Admin {
 			'settings'     => $options,
 			'shortcode'    => '[jeroens_chatbox]',
 			'languages'    => JCB_Language::admin_options(),
+			'users'        => self::user_options(),
 			'adminStrings' => JCB_Language::admin_strings( $language ),
 		);
 		wp_add_inline_script( 'jcb-admin', 'window.JCB_ADMIN = ' . wp_json_encode( $config ) . ';', 'before' );
@@ -130,6 +131,34 @@ class JCB_Admin {
 			<main class="jcb-panel" data-panel="settings"></main>
 		</div>
 		<?php
+	}
+
+
+	/**
+	 * Get WordPress users for visibility testing controls.
+	 */
+	private static function user_options(): array {
+		$users = get_users(
+			array(
+				'number'  => 250,
+				'orderby' => 'display_name',
+				'order'   => 'ASC',
+				'fields'  => array( 'ID', 'display_name', 'user_login', 'user_email' ),
+			)
+		);
+
+		return array_map(
+			static function ( $user ): array {
+				$label = $user->display_name ? $user->display_name : $user->user_login;
+				return array(
+					'id'    => (int) $user->ID,
+					'label' => $label,
+					'login' => $user->user_login,
+					'email' => $user->user_email,
+				);
+			},
+			$users
+		);
 	}
 
 }

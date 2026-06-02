@@ -40,6 +40,7 @@ class JCB_Admin {
 		}
 		wp_enqueue_style( 'jcb-admin', JCB_PLUGIN_URL . 'assets/admin.css', array(), JCB_VERSION );
 		wp_enqueue_script( 'jcb-admin', JCB_PLUGIN_URL . 'assets/admin.js', array(), JCB_VERSION, true );
+		wp_enqueue_media();
 		$options  = JCB_Options::safe_for_admin();
 		$language = JCB_Language::normalize( (string) ( $options['plugin_language'] ?? 'en' ) );
 		$config = array(
@@ -49,6 +50,8 @@ class JCB_Admin {
 			'shortcode'    => '[jeroens_chatbox]',
 			'languages'    => JCB_Language::admin_options(),
 			'users'        => self::user_options(),
+			'presets'      => JCB_Presets::all( $language, JCB_Options::all() ),
+			'categories'   => self::category_suggestions(),
 			'securityStats' => JCB_Analytics::security_stats(),
 			'adminStrings' => JCB_Language::admin_strings( $language ),
 		);
@@ -113,7 +116,27 @@ class JCB_Admin {
 						<form id="jcb-metadata-form" class="jcb-hidden">
 							<input type="hidden" name="id" id="jcb-meta-id">
 							<label><?php echo esc_html( $t( 'page' ) ); ?><input type="text" id="jcb-meta-title" readonly></label>
-							<label><?php echo esc_html( $t( 'editor_summary' ) ); ?><textarea id="jcb-meta-summary" rows="6"></textarea></label>
+							<div class="jcb-meta-url-row">
+								<span class="jcb-meta-url-label"><?php echo esc_html( $t( 'page_url' ) ); ?></span>
+								<a id="jcb-meta-url" class="jcb-meta-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+							</div>
+							<label class="jcb-meta-summary-label">
+								<span class="jcb-meta-summary-head">
+									<?php echo esc_html( $t( 'editor_summary' ) ); ?>
+									<span id="jcb-meta-autofilled" class="jcb-meta-badge jcb-hidden"><?php echo esc_html( $t( 'auto_filled' ) ); ?></span>
+								</span>
+								<textarea id="jcb-meta-summary" rows="6"></textarea>
+							</label>
+							<div class="jcb-meta-summary-tools">
+								<button type="button" class="button" id="jcb-meta-autofill"><?php echo esc_html( $t( 'autofill_summary' ) ); ?></button>
+								<span id="jcb-meta-wordcount" class="jcb-meta-hint"></span>
+							</div>
+							<p class="jcb-meta-hint"><?php echo esc_html( $t( 'autofill_summary_help' ) ); ?></p>
+							<label class="jcb-check">
+								<input type="checkbox" id="jcb-meta-auto-summary" checked> <?php echo esc_html( $t( 'auto_summary_toggle' ) ); ?>
+							</label>
+							<label><?php echo esc_html( $t( 'kb_category' ) ); ?><input type="text" id="jcb-meta-category" list="jcb-category-suggestions" placeholder="<?php echo esc_attr( $t( 'kb_category_placeholder' ) ); ?>"></label>
+							<datalist id="jcb-category-suggestions"></datalist>
 							<label><?php echo esc_html( $t( 'tags' ) ); ?><input type="text" id="jcb-meta-tags" placeholder="support, pricing, opening hours"></label>
 							<label><?php echo esc_html( $t( 'priority' ) ); ?><input type="number" id="jcb-meta-priority" min="0" max="10"></label>
 							<button class="button button-primary" type="submit"><?php echo esc_html( $t( 'save_metadata' ) ); ?></button>
@@ -134,6 +157,42 @@ class JCB_Admin {
 		<?php
 	}
 
+
+	/**
+	 * Suggest category names from existing taxonomies for the editor datalist.
+	 */
+	private static function category_suggestions(): array {
+		$names = array();
+
+		$terms = get_terms(
+			array(
+				'taxonomy'   => 'category',
+				'hide_empty' => false,
+				'number'     => 100,
+				'fields'     => 'names',
+			)
+		);
+		if ( ! is_wp_error( $terms ) ) {
+			$names = array_merge( $names, $terms );
+		}
+
+		// Include any categories already assigned in the knowledge base.
+		global $wpdb;
+		$saved = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value <> '' LIMIT 100",
+				'_jcb_category'
+			)
+		);
+		if ( is_array( $saved ) ) {
+			$names = array_merge( $names, $saved );
+		}
+
+		$names = array_filter( array_map( 'strval', $names ) );
+		$names = array_values( array_unique( $names ) );
+		sort( $names );
+		return $names;
+	}
 
 	/**
 	 * Get WordPress users for visibility testing controls.

@@ -907,3 +907,120 @@
     max-width: 260px;
   }
 }
+
+/* ---- v0.9.0 additions: metadata editor, presets, avatar ---- */
+.jcb-meta-url-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 12px;
+  font-size: 13px;
+}
+.jcb-meta-url-label {
+  font-weight: 600;
+  color: #6b7280;
+}
+.jcb-meta-url {
+  word-break: break-all;
+}
+.jcb-meta-summary-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.jcb-meta-badge {
+  display: inline-block;
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.jcb-meta-summary-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  flex-wrap: wrap;
+}
+.jcb-meta-hint {
+  color: #6b7280;
+  font-size: 12px;
+  margin: 4px 0 12px;
+}
+
+.jcb-preset-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.jcb-preset-row label {
+  flex: 1 1 220px;
+}
+.jcb-preset-row .button {
+  margin-bottom: 2px;
+}
+
+.jcb-avatar-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.jcb-avatar-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: center;
+  flex: 0 0 auto;
+}
+.jcb-avatar-thumb.is-empty { padding: 4px; }
+.jcb-avatar-thumb[data-shape="rounded"] { border-radius: 12px; }
+.jcb-avatar-thumb[data-shape="squircle"] { border-radius: 30%; }
+.jcb-avatar-thumb[data-shape="speech"] { border-radius: 50% 50% 50% 8px; }
+.jcb-avatar-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.jcb-avatar-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* Preview avatar */
+.jcb-preview-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+  flex: 0 0 auto;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: rgba(255, 255, 255, 0.25);
+}
+.jcb-preview-avatar[data-shape="rounded"] { border-radius: 8px; }
+.jcb-preview-avatar[data-shape="squircle"] { border-radius: 30%; }
+.jcb-preview-avatar[data-shape="speech"] { border-radius: 50% 50% 50% 4px; }
+.jcb-preview-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

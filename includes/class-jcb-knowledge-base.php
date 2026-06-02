@@ -16,6 +16,8 @@ class JCB_Knowledge_Base {
 	private const SUMMARY_KEY = '_jcb_summary';
 	private const TAGS_KEY    = '_jcb_tags';
 	private const PRIORITY_KEY = '_jcb_priority';
+	private const CATEGORY_KEY = '_jcb_category';
+	private const AUTO_SUMMARY_KEY = '_jcb_auto_summary';
 
 	/**
 	 * List available public content.
@@ -53,6 +55,30 @@ class JCB_Knowledge_Base {
 			'url'      => get_permalink( $post_id ),
 			'included' => (bool) get_post_meta( $post_id, self::INCLUDE_KEY, true ),
 			'metadata' => self::metadata( $post_id ),
+		);
+	}
+
+	/**
+	 * Build the read-only suggestion data for one page (summary helper, word count).
+	 *
+	 * This runs do_blocks and is therefore loaded lazily for the selected page only.
+	 *
+	 * @param int $post_id Post id.
+	 */
+	public static function suggestion( int $post_id ): array {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return array(
+				'meta_description'  => '',
+				'suggested_summary' => '',
+				'word_count'        => 0,
+			);
+		}
+		$meta_description = self::meta_description( $post );
+		return array(
+			'meta_description'  => $meta_description,
+			'suggested_summary' => self::suggested_summary( $post, $meta_description ),
+			'word_count'        => self::word_count( $post ),
 		);
 	}
 
@@ -100,10 +126,14 @@ class JCB_Knowledge_Base {
 	 * @param int $post_id Post id.
 	 */
 	public static function metadata( int $post_id ): array {
+		$auto = get_post_meta( $post_id, self::AUTO_SUMMARY_KEY, true );
 		return array(
-			'summary'  => (string) get_post_meta( $post_id, self::SUMMARY_KEY, true ),
-			'tags'     => (string) get_post_meta( $post_id, self::TAGS_KEY, true ),
-			'priority' => (int) get_post_meta( $post_id, self::PRIORITY_KEY, true ),
+			'summary'      => (string) get_post_meta( $post_id, self::SUMMARY_KEY, true ),
+			'tags'         => (string) get_post_meta( $post_id, self::TAGS_KEY, true ),
+			'priority'     => (int) get_post_meta( $post_id, self::PRIORITY_KEY, true ),
+			'category'     => (string) get_post_meta( $post_id, self::CATEGORY_KEY, true ),
+			// Default the auto summary helper to on for pages that never set it.
+			'auto_summary' => ( '' === $auto ) ? true : (bool) $auto,
 		);
 	}
 
@@ -120,6 +150,9 @@ class JCB_Knowledge_Base {
 		update_post_meta( $post_id, self::SUMMARY_KEY, JCB_Sanitizer::textarea( (string) ( $metadata['summary'] ?? '' ), 1000 ) );
 		update_post_meta( $post_id, self::TAGS_KEY, JCB_Sanitizer::text( (string) ( $metadata['tags'] ?? '' ), 300 ) );
 		update_post_meta( $post_id, self::PRIORITY_KEY, JCB_Sanitizer::int_range( $metadata['priority'] ?? 0, 0, 10 ) );
+		update_post_meta( $post_id, self::CATEGORY_KEY, JCB_Sanitizer::text( (string) ( $metadata['category'] ?? '' ), 120 ) );
+		$auto_summary = JCB_Sanitizer::bool( $metadata['auto_summary'] ?? true );
+		update_post_meta( $post_id, self::AUTO_SUMMARY_KEY, $auto_summary ? '1' : '0' );
 		return self::item( $post_id );
 	}
 
@@ -176,22 +209,126 @@ class JCB_Knowledge_Base {
 	private static function build_page_document( WP_Post $post ): string {
 		$metadata = self::metadata( (int) $post->ID );
 		$content  = self::clean_content( $post );
-		$body     = "Site: " . get_bloginfo( 'name' ) . "\n";
-		$body    .= "Site URL: " . home_url() . "\n";
-		$body    .= "Generated: " . gmdate( 'c' ) . "\n";
-		$body    .= "Title: " . get_the_title( $post ) . "\n";
-		$body    .= "Type: " . $post->post_type . "\n";
-		$body    .= "URL: " . get_permalink( $post ) . "\n";
-		$body    .= "Modified: " . get_post_modified_time( 'c', true, $post ) . "\n";
-		$body    .= "Priority: " . (int) $metadata['priority'] . "\n";
+		$meta_description = self::meta_description( $post );
+
+		// Resolve the best available summary: editor summary first, then the
+		// meta description, then a generated excerpt when auto summary is on.
+		$summary = trim( (string) $metadata['summary'] );
+		if ( '' === $summary && ! empty( $metadata['auto_summary'] ) ) {
+			$summary = self::suggested_summary( $post, $meta_description );
+		}
+
+		$body  = "Site: " . get_bloginfo( 'name' ) . "\n";
+		$body .= "Site URL: " . home_url() . "\n";
+		$body .= "Generated: " . gmdate( 'c' ) . "\n";
+		$body .= "Title: " . get_the_title( $post ) . "\n";
+		$body .= "Type: " . $post->post_type . "\n";
+		$body .= "URL: " . get_permalink( $post ) . "\n";
+		$body .= "Modified: " . get_post_modified_time( 'c', true, $post ) . "\n";
+		$body .= "Priority: " . (int) $metadata['priority'] . "\n";
+		if ( $metadata['category'] ) {
+			$body .= "Category: " . $metadata['category'] . "\n";
+		}
 		if ( $metadata['tags'] ) {
 			$body .= "Tags: " . $metadata['tags'] . "\n";
 		}
-		if ( $metadata['summary'] ) {
-			$body .= "Editor Summary: " . $metadata['summary'] . "\n";
+		if ( $meta_description ) {
+			$body .= "Meta Description: " . $meta_description . "\n";
+		}
+		if ( $summary ) {
+			$body .= "Summary: " . $summary . "\n";
 		}
 		$body .= "Content:\n" . $content . "\n";
 		return $body;
+	}
+
+	/**
+	 * Read the SEO meta description from common plugins or fall back to the excerpt.
+	 *
+	 * @param WP_Post $post Post.
+	 */
+	public static function meta_description( WP_Post $post ): string {
+		$post_id = (int) $post->ID;
+		$keys    = array(
+			'_yoast_wpseo_metadesc', // Yoast SEO.
+			'rank_math_description', // Rank Math.
+			'_aioseo_description',   // All in One SEO (legacy meta).
+			'_aioseop_description',  // All in One SEO (older).
+			'_seopress_titles_desc', // SEOPress.
+			'_genesis_description',  // Genesis.
+		);
+
+		foreach ( $keys as $key ) {
+			$value = trim( (string) get_post_meta( $post_id, $key, true ) );
+			if ( '' !== $value ) {
+				return self::normalize_text( $value, 320 );
+			}
+		}
+
+		$excerpt = trim( (string) $post->post_excerpt );
+		if ( '' !== $excerpt ) {
+			return self::normalize_text( $excerpt, 320 );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Suggest a summary for the editor: meta description first, then a generated excerpt.
+	 *
+	 * @param WP_Post $post Post.
+	 * @param string  $meta_description Pre-resolved meta description.
+	 */
+	public static function suggested_summary( WP_Post $post, string $meta_description = '' ): string {
+		$meta_description = '' !== $meta_description ? $meta_description : self::meta_description( $post );
+		if ( '' !== $meta_description ) {
+			return $meta_description;
+		}
+		return self::generate_excerpt( $post, 55 );
+	}
+
+	/**
+	 * Build a plain text excerpt from the post body.
+	 *
+	 * @param WP_Post $post  Post.
+	 * @param int     $words Maximum words.
+	 */
+	private static function generate_excerpt( WP_Post $post, int $words = 55 ): string {
+		$content = self::clean_content( $post );
+		if ( '' === $content ) {
+			return '';
+		}
+		return self::normalize_text( wp_trim_words( $content, $words, '...' ), 600 );
+	}
+
+	/**
+	 * Count words in the cleaned post body.
+	 *
+	 * @param WP_Post $post Post.
+	 */
+	private static function word_count( WP_Post $post ): int {
+		$content = self::clean_content( $post );
+		if ( '' === $content ) {
+			return 0;
+		}
+		return (int) str_word_count( $content );
+	}
+
+	/**
+	 * Collapse whitespace and trim to a maximum length.
+	 *
+	 * @param string $text  Text.
+	 * @param int    $limit Maximum characters.
+	 */
+	private static function normalize_text( string $text, int $limit = 320 ): string {
+		$text = wp_strip_all_tags( $text );
+		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, get_bloginfo( 'charset' ) );
+		$text = preg_replace( '/\s+/', ' ', $text );
+		$text = trim( (string) $text );
+		if ( strlen( $text ) > $limit ) {
+			$text = rtrim( substr( $text, 0, $limit ) ) . '...';
+		}
+		return $text;
 	}
 
 	/**

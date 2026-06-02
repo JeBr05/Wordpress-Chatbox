@@ -88,6 +88,14 @@ class JCB_Options {
 			'assistantBubbleTextColor' => $options['assistant_bubble_text_color'],
 			'bubbleStyle'              => $options['bubble_style'],
 			'designTheme'              => $options['design_theme'],
+			'avatarUrl'                => esc_url_raw( (string) $options['avatar_url'] ),
+			'avatarShape'              => $options['avatar_shape'],
+			'showAvatarInHeader'       => (bool) $options['show_avatar_in_header'],
+			'showAvatarOnMessages'     => (bool) $options['show_avatar_on_messages'],
+			'launcherStyle'            => $options['launcher_style'],
+			'launcherIcon'             => $options['launcher_icon'],
+			'enableMarkdown'           => (bool) $options['enable_markdown'],
+			'quickReplies'             => self::quick_replies_list( (string) $options['quick_replies'] ),
 			'position'                 => $options['launcher_position'],
 			'launcherLabel'  => $options['launcher_label'],
 			'startOpen'      => (bool) $options['start_open'],
@@ -119,6 +127,18 @@ class JCB_Options {
 			'assistant_bubble_text_color' => '#111827',
 			'bubble_style'             => 'soft',
 			'design_theme'             => 'custom',
+			'avatar_url'               => '',
+			'avatar_shape'             => 'circle',
+			'show_avatar_in_header'    => true,
+			'show_avatar_on_messages'  => true,
+			'launcher_style'           => 'label',
+			'launcher_icon'            => 'chat',
+			'enable_markdown'          => true,
+			'quick_replies'            => '',
+			'contact_email'            => '',
+			'contact_phone'            => '',
+			'contact_address'          => '',
+			'instruction_preset'       => 'custom',
 			'launcher_position'        => 'right',
 			'launcher_label'           => JCB_Language::text( 'launcher_label', 'en' ),
 			'frontend_enabled'         => true,
@@ -158,9 +178,10 @@ class JCB_Options {
 			'message_length_enabled'   => true,
 			'message_max_chars'        => 2000,
 			'message_length_message'   => 'Your message is too long. Please keep it under {limit} characters.',
-			'blocked_words_enabled'    => false,
+			'blocked_words_enabled'    => true,
+			'blocked_words_use_default' => true,
 			'blocked_words_list'       => '',
-			'blocked_words_action'     => 'warn',
+			'blocked_words_action'     => 'block',
 			'blocked_words_message'    => 'Your message contains content that is not allowed. Please rephrase your question.',
 			'ip_blocklist_enabled'     => false,
 			'ip_blocklist'             => '',
@@ -170,6 +191,7 @@ class JCB_Options {
 			'auto_flag_action'         => 'flag',
 			'auto_flag_block_message'  => 'Your message was flagged by the security system. Please rephrase your question.',
 			'detect_jailbreak_enabled' => true,
+			'jailbreak_multilingual_enabled' => true,
 			'jailbreak_severity'       => 10,
 			'jailbreak_patterns'       => self::default_jailbreak_patterns(),
 			'detect_abuse_enabled'     => true,
@@ -280,6 +302,36 @@ class JCB_Options {
 			$allowed_design_themes = array( 'custom', 'purple', 'ocean', 'forest', 'midnight', 'sand' );
 			$current['design_theme'] = in_array( $design_theme, $allowed_design_themes, true ) ? $design_theme : 'custom';
 		}
+		if ( isset( $input['avatar_url'] ) ) {
+			$current['avatar_url'] = esc_url_raw( trim( (string) wp_unslash( $input['avatar_url'] ) ) );
+		}
+		if ( isset( $input['avatar_shape'] ) ) {
+			$avatar_shape = sanitize_key( (string) $input['avatar_shape'] );
+			$current['avatar_shape'] = in_array( $avatar_shape, array( 'circle', 'rounded', 'squircle', 'speech' ), true ) ? $avatar_shape : 'circle';
+		}
+		if ( isset( $input['launcher_style'] ) ) {
+			$launcher_style = sanitize_key( (string) $input['launcher_style'] );
+			$current['launcher_style'] = in_array( $launcher_style, array( 'label', 'icon', 'avatar' ), true ) ? $launcher_style : 'label';
+		}
+		if ( isset( $input['launcher_icon'] ) ) {
+			$launcher_icon = sanitize_key( (string) $input['launcher_icon'] );
+			$current['launcher_icon'] = in_array( $launcher_icon, array( 'chat', 'question', 'sparkle', 'bot' ), true ) ? $launcher_icon : 'chat';
+		}
+		if ( isset( $input['quick_replies'] ) ) {
+			$current['quick_replies'] = self::sanitize_quick_replies( (string) $input['quick_replies'] );
+		}
+		if ( isset( $input['contact_email'] ) ) {
+			$current['contact_email'] = sanitize_email( wp_unslash( (string) $input['contact_email'] ) );
+		}
+		if ( isset( $input['contact_phone'] ) ) {
+			$current['contact_phone'] = JCB_Sanitizer::text( (string) $input['contact_phone'], 40 );
+		}
+		if ( isset( $input['contact_address'] ) ) {
+			$current['contact_address'] = JCB_Sanitizer::text( (string) $input['contact_address'], 200 );
+		}
+		if ( isset( $input['instruction_preset'] ) ) {
+			$current['instruction_preset'] = sanitize_key( (string) $input['instruction_preset'] );
+		}
 		if ( isset( $input['launcher_position'] ) ) {
 			$current['launcher_position'] = 'left' === $input['launcher_position'] ? 'left' : 'right';
 		}
@@ -386,7 +438,7 @@ class JCB_Options {
 			$current['last_file_count'] = absint( $input['last_file_count'] );
 		}
 
-		$bool_keys = array( 'frontend_enabled', 'auto_embed', 'start_open', 'show_on_home', 'show_on_pages', 'show_on_posts', 'show_on_archives', 'show_on_mobile', 'enable_file_search', 'include_sources', 'session_context_enabled', 'log_conversations', 'redact_personal_data', 'security_enabled', 'rate_limit_enabled', 'message_length_enabled', 'blocked_words_enabled', 'ip_blocklist_enabled', 'auto_flag_enabled', 'detect_jailbreak_enabled', 'detect_abuse_enabled', 'code_injection_enabled', 'detect_content_enabled', 'detect_behavior_enabled', 'debug_mode', 'delete_data_on_uninstall', 'replace_vector_store' );
+		$bool_keys = array( 'frontend_enabled', 'auto_embed', 'start_open', 'show_on_home', 'show_on_pages', 'show_on_posts', 'show_on_archives', 'show_on_mobile', 'enable_file_search', 'include_sources', 'session_context_enabled', 'log_conversations', 'redact_personal_data', 'security_enabled', 'rate_limit_enabled', 'message_length_enabled', 'blocked_words_enabled', 'blocked_words_use_default', 'ip_blocklist_enabled', 'auto_flag_enabled', 'detect_jailbreak_enabled', 'jailbreak_multilingual_enabled', 'detect_abuse_enabled', 'code_injection_enabled', 'detect_content_enabled', 'detect_behavior_enabled', 'show_avatar_in_header', 'show_avatar_on_messages', 'enable_markdown', 'debug_mode', 'delete_data_on_uninstall', 'replace_vector_store' );
 		foreach ( $bool_keys as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$current[ $key ] = JCB_Sanitizer::bool( $input[ $key ] );
@@ -522,6 +574,41 @@ class JCB_Options {
 		}
 
 		return implode( "\n", array_values( array_unique( $paths ) ) );
+	}
+
+	/**
+	 * Sanitize the quick reply suggestions (one per line).
+	 *
+	 * @param string $value Raw input.
+	 */
+	private static function sanitize_quick_replies( string $value ): string {
+		$lines   = preg_split( '/\r\n|\r|\n/', (string) wp_unslash( $value ) );
+		$replies = array();
+		foreach ( (array) $lines as $line ) {
+			$line = JCB_Sanitizer::text( (string) $line, 120 );
+			if ( '' !== $line ) {
+				$replies[] = $line;
+			}
+		}
+		$replies = array_slice( array_values( array_unique( $replies ) ), 0, 8 );
+		return implode( "\n", $replies );
+	}
+
+	/**
+	 * Parse the quick reply suggestions into an array for the front-end.
+	 *
+	 * @param string $value Stored value.
+	 */
+	public static function quick_replies_list( string $value ): array {
+		$lines   = preg_split( '/\r\n|\r|\n/', $value );
+		$replies = array();
+		foreach ( (array) $lines as $line ) {
+			$line = trim( (string) $line );
+			if ( '' !== $line ) {
+				$replies[] = $line;
+			}
+		}
+		return array_slice( array_values( array_unique( $replies ) ), 0, 8 );
 	}
 
 	/**

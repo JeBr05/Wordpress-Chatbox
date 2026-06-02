@@ -54,6 +54,16 @@ class JCB_REST_Controller {
 
 		register_rest_route(
 			JCB_REST_NAMESPACE,
+			'/content/(?P<id>\d+)/suggestion',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'content_suggestion' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			JCB_REST_NAMESPACE,
 			'/metadata/(?P<id>\d+)',
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
@@ -238,6 +248,16 @@ class JCB_REST_Controller {
 		$included = ! empty( $params['included'] );
 		$item     = JCB_Knowledge_Base::set_included( $id, $included );
 		return rest_ensure_response( array( 'item' => $item, 'selected' => count( JCB_Knowledge_Base::selected() ) ) );
+	}
+
+	/**
+	 * Return the lazy summary suggestion for one page.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function content_suggestion( WP_REST_Request $request ): WP_REST_Response {
+		$id = (int) $request['id'];
+		return rest_ensure_response( JCB_Knowledge_Base::suggestion( $id ) );
 	}
 
 	/**

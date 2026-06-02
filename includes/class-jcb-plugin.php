@@ -38,6 +38,7 @@ final class JCB_Plugin {
 		$files = array(
 			'class-jcb-sanitizer.php',
 			'class-jcb-language.php',
+			'class-jcb-presets.php',
 			'class-jcb-options.php',
 			'class-jcb-security-manager.php',
 			'class-jcb-encryption.php',

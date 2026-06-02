@@ -10,6 +10,8 @@
   const nonce = window.JCB_ADMIN.nonce;
   const strings = window.JCB_ADMIN.adminStrings || {};
   const users = window.JCB_ADMIN.users || [];
+  const presets = window.JCB_ADMIN.presets || [];
+  const categorySuggestions = window.JCB_ADMIN.categories || [];
   const securityStats = window.JCB_ADMIN.securityStats || { total_flagged: 0, last_24_hours: 0, last_7_days: 0 };
   const languages = window.JCB_ADMIN.languages || [
     { code: 'en', name: 'English', native: 'English' },
@@ -207,19 +209,109 @@
     `).join('');
   };
 
+  const populateCategorySuggestions = () => {
+    const list = $('#jcb-category-suggestions');
+    if (!list || list.dataset.filled) return;
+    list.innerHTML = categorySuggestions.map((name) => `<option value="${escapeHtml(name)}"></option>`).join('');
+    list.dataset.filled = '1';
+  };
+
+  const applySuggestionToEditor = (item) => {
+    if (!state.activeItem || state.activeItem.id !== item.id) return;
+    const derived = item.derived || {};
+    const summaryNode = $('#jcb-meta-summary');
+    const badge = $('#jcb-meta-autofilled');
+    const suggestion = derived.suggested_summary || '';
+    const storedSummary = item.metadata?.summary || '';
+    if (summaryNode && !storedSummary && !summaryNode.value && suggestion) {
+      summaryNode.value = suggestion;
+      badge?.classList.remove('jcb-hidden');
+    }
+    const wordCount = $('#jcb-meta-wordcount');
+    if (wordCount) {
+      const count = Number(derived.word_count || 0);
+      wordCount.textContent = count ? sprintf('word_count', '%s words on this page', count) : '';
+    }
+  };
+
+  const loadSuggestion = async (item) => {
+    if (item.derived) {
+      applySuggestionToEditor(item);
+      return;
+    }
+    try {
+      const data = await api(`/content/${item.id}/suggestion`);
+      item.derived = data || {};
+      applySuggestionToEditor(item);
+    } catch (error) {
+      // A failed suggestion is non-critical; leave the field as-is.
+    }
+  };
+
   const selectItem = (id) => {
     state.activeItem = state.items.find((item) => item.id === Number(id));
     const form = $('#jcb-metadata-form');
     const empty = $('#jcb-editor-empty');
     if (!state.activeItem || !form) return;
+    const item = state.activeItem;
+    const meta = item.metadata || {};
     empty.classList.add('jcb-hidden');
     form.classList.remove('jcb-hidden');
-    $('#jcb-meta-id').value = state.activeItem.id;
-    $('#jcb-meta-title').value = state.activeItem.title;
-    $('#jcb-meta-summary').value = state.activeItem.metadata?.summary || '';
-    $('#jcb-meta-tags').value = state.activeItem.metadata?.tags || '';
-    $('#jcb-meta-priority').value = state.activeItem.metadata?.priority || 0;
+    populateCategorySuggestions();
+
+    $('#jcb-meta-id').value = item.id;
+    $('#jcb-meta-title').value = item.title;
+
+    const urlNode = $('#jcb-meta-url');
+    if (urlNode) {
+      urlNode.textContent = item.url || '';
+      urlNode.href = item.url || '#';
+    }
+
+    const summaryNode = $('#jcb-meta-summary');
+    const badge = $('#jcb-meta-autofilled');
+    if (summaryNode) summaryNode.value = meta.summary || '';
+    badge?.classList.add('jcb-hidden');
+
+    const wordCount = $('#jcb-meta-wordcount');
+    if (wordCount) wordCount.textContent = '';
+
+    const autoSummary = $('#jcb-meta-auto-summary');
+    if (autoSummary) autoSummary.checked = meta.auto_summary !== false;
+
+    const category = $('#jcb-meta-category');
+    if (category) category.value = meta.category || '';
+
+    $('#jcb-meta-tags').value = meta.tags || '';
+    $('#jcb-meta-priority').value = meta.priority || 0;
     renderContentList();
+
+    // Lazily load the summary suggestion + word count for this page only.
+    loadSuggestion(item);
+  };
+
+  const autofillSummary = async () => {
+    if (!state.activeItem) return;
+    const item = state.activeItem;
+    const summaryNode = $('#jcb-meta-summary');
+    if (!summaryNode) return;
+    let suggestion = item.derived?.suggested_summary || '';
+    if (!item.derived) {
+      try {
+        const data = await api(`/content/${item.id}/suggestion`);
+        item.derived = data || {};
+        suggestion = item.derived.suggested_summary || '';
+      } catch (error) {
+        suggestion = '';
+      }
+    }
+    if (!suggestion) {
+      notice(t('autofill_none', 'No meta description or content was found to build a summary.'), 'error');
+      return;
+    }
+    summaryNode.value = suggestion;
+    $('#jcb-meta-autofilled')?.classList.remove('jcb-hidden');
+    notice(t('autofill_done', 'Summary filled from the page. Review it and save.'));
   };
 
   const toggleInclude = async (id, included) => {
@@ -246,6 +338,8 @@
           summary: $('#jcb-meta-summary').value,
           tags: $('#jcb-meta-tags').value,
           priority: $('#jcb-meta-priority').value,
+          category: $('#jcb-meta-category')?.value || '',
+          auto_summary: $('#jcb-meta-auto-summary')?.checked ? 1 : 0,
         }),
       });
       const index = state.items.findIndex((item) => item.id === Number(id));
@@ -430,11 +524,110 @@
   };
 
 
+  const presetDescription = (id) => {
+    if (!id || id === 'custom') return t('preset_custom_help', 'Keeps your current instructions. Choose a preset to replace them.');
+    const preset = presets.find((item) => item.id === id);
+    return preset ? preset.description : '';
+  };
+
+  const applyPreset = (panel) => {
+    const select = $('[data-preset-select]', panel);
+    const textareaNode = $('[data-setting="instructions"]', panel);
+    const id = select?.value || 'custom';
+    if (id === 'custom') {
+      notice(t('preset_custom_help', 'Keeps your current instructions. Choose a preset to replace them.'));
+      return;
+    }
+    const preset = presets.find((item) => item.id === id);
+    if (!preset || !textareaNode) return;
+    textareaNode.value = preset.instructions;
+    notice(t('preset_applied', 'Preset applied. Review the instructions and save.'));
+  };
+
+  const avatarShapeSelect = () => securitySelect(t('avatar_shape', 'Avatar shape'), 'avatar_shape', [
+    { value: 'circle', label: t('shape_circle', 'Circle') },
+    { value: 'rounded', label: t('shape_rounded', 'Rounded square') },
+    { value: 'squircle', label: t('shape_squircle', 'Squircle') },
+    { value: 'speech', label: t('shape_speech', 'Speech bubble') },
+  ]);
+
+  const launcherStyleSelect = () => securitySelect(t('launcher_style', 'Launcher style'), 'launcher_style', [
+    { value: 'label', label: t('launcher_style_label', 'Text button') },
+    { value: 'icon', label: t('launcher_style_icon', 'Round icon button') },
+    { value: 'avatar', label: t('launcher_style_avatar', 'Avatar button') },
+  ]);
+
+  const launcherIconSelect = () => securitySelect(t('launcher_icon', 'Launcher icon'), 'launcher_icon', [
+    { value: 'chat', label: t('icon_chat', 'Chat bubble') },
+    { value: 'question', label: t('icon_question', 'Question mark') },
+    { value: 'sparkle', label: t('icon_sparkle', 'Sparkle') },
+    { value: 'bot', label: t('icon_bot', 'Robot') },
+  ]);
+
+  const avatarPicker = () => {
+    const url = state.settings.avatar_url || '';
+    return `
+      <label>${escapeHtml(t('avatar_image', 'Profile picture'))}</label>
+      <div class="jcb-avatar-control">
+        <span class="jcb-avatar-thumb ${url ? '' : 'is-empty'}" data-avatar-thumb data-shape="${escapeHtml(state.settings.avatar_shape || 'circle')}">${url ? `<img src="${escapeHtml(url)}" alt="">` : escapeHtml(t('no_image', 'No image'))}</span>
+        <span class="jcb-avatar-buttons">
+          <button class="button" type="button" data-avatar-select>${escapeHtml(t('select_image', 'Select image'))}</button>
+          <button class="button" type="button" data-avatar-remove ${url ? '' : 'disabled'}>${escapeHtml(t('remove', 'Remove'))}</button>
+        </span>
+        <input type="hidden" data-setting="avatar_url" data-design-live="1" value="${escapeHtml(url)}">
+      </div>
+      <p class="jcb-meta-hint">${escapeHtml(t('avatar_image_help', 'Shown in the chat header, on answers and optionally on the launcher button.'))}</p>
+    `;
+  };
+
+  const openMediaPicker = (panel) => {
+    if (!window.wp || !window.wp.media) {
+      notice(t('media_unavailable', 'The WordPress media library is not available on this screen.'), 'error');
+      return;
+    }
+    const frame = window.wp.media({
+      title: t('select_avatar', 'Select a profile picture'),
+      button: { text: t('use_image', 'Use this image') },
+      library: { type: 'image' },
+      multiple: false,
+    });
+    frame.on('select', () => {
+      const attachment = frame.state().get('selection').first().toJSON();
+      const url = attachment.sizes?.thumbnail?.url || attachment.url || '';
+      const input = $('[data-setting="avatar_url"]', panel);
+      const thumb = $('[data-avatar-thumb]', panel);
+      const remove = $('[data-avatar-remove]', panel);
+      if (input) input.value = url;
+      if (thumb) {
+        thumb.classList.remove('is-empty');
+        thumb.innerHTML = `<img src="${escapeHtml(url)}" alt="">`;
+      }
+      if (remove) remove.disabled = false;
+      renderDesignPreview(panel);
+    });
+    frame.open();
+  };
+
+  const removeAvatar = (panel) => {
+    const input = $('[data-setting="avatar_url"]', panel);
+    const thumb = $('[data-avatar-thumb]', panel);
+    const remove = $('[data-avatar-remove]', panel);
+    if (input) input.value = '';
+    if (thumb) {
+      thumb.classList.add('is-empty');
+      thumb.textContent = t('no_image', 'No image');
+    }
+    if (remove) remove.disabled = true;
+    renderDesignPreview(panel);
+  };
+
   const renderSettingsPanel = (panelName) => {
     const panel = $(`[data-panel="${panelName}"]`);
     if (!panel) return;
 
     if (panelName === 'chatbox') {
+      const presetOptions = [{ id: 'custom', label: t('preset_custom', 'Custom (keep my text)') }]
+        .concat(presets.map((preset) => ({ id: preset.id, label: preset.label })));
       panel.innerHTML = `
         <div class="jcb-grid jcb-grid-two">
           <section class="jcb-card">
@@ -446,7 +639,16 @@
                 ${['gpt-4.1-mini','gpt-4.1','gpt-4o-mini','gpt-4o','gpt-5-mini','gpt-5','gpt-5.1-mini','gpt-5.1','gpt-5.2-mini','gpt-5.2'].map((model) => `<option ${state.settings.model === model ? 'selected' : ''}>${model}</option>`).join('')}
               </select>
             </label>
-            ${textarea(t('instructions', 'Instructions'), 'instructions', 10)}
+            <div class="jcb-preset-row">
+              <label>${escapeHtml(t('instruction_preset', 'Instruction preset'))}
+                <select data-preset-select>
+                  ${presetOptions.map((preset) => `<option value="${escapeHtml(preset.id)}" ${(state.settings.instruction_preset || 'custom') === preset.id ? 'selected' : ''}>${escapeHtml(preset.label)}</option>`).join('')}
+                </select>
+              </label>
+              <button class="button" type="button" data-apply-preset>${escapeHtml(t('apply_preset', 'Apply preset'))}</button>
+            </div>
+            <p class="jcb-meta-hint" data-preset-description>${escapeHtml(presetDescription(state.settings.instruction_preset || 'custom'))}</p>
+            ${textarea(t('instructions', 'Instructions'), 'instructions', 12)}
             ${field(t('max_answer_tokens', 'Maximum answer tokens'), 'max_output_tokens', 'number')}
             ${saveButton()}
           </section>
@@ -454,6 +656,12 @@
             <h2>${escapeHtml(t('answer_behaviour', 'Answer behaviour'))}</h2>
             <p>${escapeHtml(t('answer_behaviour_p1', "Jeroen's Chatbox uses your selected pages first."))}</p>
             <p>${escapeHtml(t('answer_behaviour_p2', 'Best use cases are support, opening hours, product details, booking questions and content guidance.'))}</p>
+            <h3>${escapeHtml(t('contact_details', 'Contact details'))}</h3>
+            <p class="jcb-meta-hint">${escapeHtml(t('contact_details_help', 'Presets use these so the chatbox can share how to reach you. Leave empty to skip.'))}</p>
+            ${field(t('contact_email', 'Contact email'), 'contact_email', 'email')}
+            ${field(t('contact_phone', 'Contact phone'), 'contact_phone')}
+            ${field(t('contact_address', 'Contact address'), 'contact_address')}
+            ${saveButton()}
           </section>
         </div>`;
     }
@@ -562,6 +770,16 @@
                 <option value="left" ${state.settings.launcher_position === 'left' ? 'selected' : ''}>${escapeHtml(t('left', 'Left'))}</option>
               </select>
             </label>
+            <h3>${escapeHtml(t('avatar_section', 'Profile picture and launcher'))}</h3>
+            ${avatarPicker()}
+            ${avatarShapeSelect()}
+            ${checkbox(t('show_avatar_in_header', 'Show avatar in the chat header'), 'show_avatar_in_header')}
+            ${checkbox(t('show_avatar_on_messages', 'Show avatar next to answers'), 'show_avatar_on_messages')}
+            ${launcherStyleSelect()}
+            ${launcherIconSelect()}
+            <h3>${escapeHtml(t('conversation_extras', 'Conversation extras'))}</h3>
+            ${checkbox(t('enable_markdown', 'Render Markdown links and formatting in answers'), 'enable_markdown', t('enable_markdown_help', 'Turns [text](link), bold and lists into clickable, formatted output.'))}
+            ${textarea(t('quick_replies', 'Quick reply suggestions'), 'quick_replies', 5, t('quick_replies_help', 'One per line. Shown as tappable chips under the welcome message. Up to 8.'))}
             ${saveButton()}
           </section>
           <aside class="jcb-design-side">
@@ -572,6 +790,7 @@
                 <div class="jcb-preview" data-design-preview data-bubble-style="${escapeHtml(state.settings.bubble_style || 'soft')}" style="--jcb-preview-accent:${escapeHtml(state.settings.accent_color || '#6f5bd6')};--jcb-preview-font:${escapeHtml(state.settings.font_color || '#111827')};--jcb-preview-bg:${escapeHtml(state.settings.background_color || '#f8fafc')};--jcb-preview-user-bg:${escapeHtml(state.settings.user_bubble_color || state.settings.accent_color || '#6f5bd6')};--jcb-preview-user-text:${escapeHtml(state.settings.user_bubble_text_color || '#ffffff')};--jcb-preview-assistant-bg:${escapeHtml(state.settings.assistant_bubble_color || '#ffffff')};--jcb-preview-assistant-text:${escapeHtml(state.settings.assistant_bubble_text_color || '#111827')};">
                   <div class="jcb-preview-window">
                     <div class="jcb-preview-header">
+                      <span class="jcb-preview-avatar ${state.settings.avatar_url ? '' : 'jcb-hidden'}" data-preview-avatar data-shape="${escapeHtml(state.settings.avatar_shape || 'circle')}">${state.settings.avatar_url ? `<img src="${escapeHtml(state.settings.avatar_url)}" alt="">` : ''}</span>
                       <span>${escapeHtml(state.settings.assistant_name || "Jeroen's Chatbox")}</span>
                       <span class="jcb-preview-close">×</span>
                     </div>
@@ -641,6 +860,7 @@
           <section class="jcb-card jcb-security-card">
             <div class="jcb-card-heading"><span class="jcb-card-icon red">⊘</span><div><h2>${escapeHtml(t('blocked_words_phrases', 'Blocked words and phrases'))}</h2><p>${escapeHtml(t('blocked_words_desc', 'Filter messages containing specific words or phrases.'))}</p></div></div>
             ${switchField(t('enable_blocked_words_filter', 'Enable blocked words filter'), 'blocked_words_enabled', t('blocked_words_help', 'Add one word or phrase per line. You can use * as a wildcard.'))}
+            ${switchField(t('use_default_word_list', 'Block common offensive words automatically'), 'blocked_words_use_default', t('use_default_word_list_help', 'Adds a built-in multilingual profanity list on top of your own words.'))}
             ${textarea(t('blocked_words_list', 'Blocked words list'), 'blocked_words_list', 8, t('blocked_words_list_help', 'One word or phrase per line. Matching is case insensitive.'))}
             ${securitySelect(t('action_when_blocked_word_found', 'Action when blocked word is found'), 'blocked_words_action', [
               { value: 'warn', label: t('warn_allow', 'Warn and allow') },
@@ -672,7 +892,7 @@
             ${textarea(t('auto_flag_block_message', 'Auto flag block message'), 'auto_flag_block_message', 3, t('auto_flag_block_help', 'Shown when the action is block.'))}
           </section>
 
-          ${securityRuleCard(t('jailbreak_detection', 'Jailbreak detection'), t('jailbreak_detection_desc', 'Detect attempts to override instructions, extract system prompts or bypass rules.'), 'detect_jailbreak_enabled', 'jailbreak_severity', textarea(t('jailbreak_patterns', 'Jailbreak patterns'), 'jailbreak_patterns', 9, t('pattern_help', 'One phrase per line. Wrap in / / for regex. Use * as wildcard.')))}
+          ${securityRuleCard(t('jailbreak_detection', 'Jailbreak detection'), t('jailbreak_detection_desc', 'Detect attempts to override instructions, extract system prompts or bypass rules.'), 'detect_jailbreak_enabled', 'jailbreak_severity', `${switchField(t('jailbreak_multilingual', 'Detect jailbreaks in any language'), 'jailbreak_multilingual_enabled', t('jailbreak_multilingual_help', 'Adds a built-in pattern bank for Dutch, German, French, Spanish, Italian and Portuguese on top of the English patterns below.'))}${textarea(t('jailbreak_patterns', 'Jailbreak patterns'), 'jailbreak_patterns', 9, t('pattern_help', 'One phrase per line. Wrap in / / for regex. Use * as wildcard.'))}`)}
 
           ${securityRuleCard(t('abuse_detection', 'Abuse detection'), t('abuse_detection_desc', 'Detect excessive special characters and code injection attempts.'), 'detect_abuse_enabled', 'abuse_severity', switchField(t('code_injection_check', 'Code injection check'), 'code_injection_enabled', t('code_injection_check_help', 'Checks for SQL injection, script tags and common eval or exec calls.')))}
 
@@ -786,6 +1006,8 @@
     values.bubble_style = $('[data-setting="bubble_style"]', panel)?.value || state.settings.bubble_style || 'soft';
     values.welcome_message = $('[data-setting="welcome_message"]', panel)?.value || state.settings.welcome_message || '';
     values.placeholder = $('[data-setting="placeholder"]', panel)?.value || state.settings.placeholder || '';
+    values.avatar_url = $('[data-setting="avatar_url"]', panel)?.value || '';
+    values.avatar_shape = $('[data-setting="avatar_shape"]', panel)?.value || state.settings.avatar_shape || 'circle';
     return values;
   };
 
@@ -806,6 +1028,19 @@
     const placeholder = $('[data-preview-placeholder]', panel);
     if (welcome) welcome.textContent = values.welcome_message || '';
     if (placeholder) placeholder.textContent = values.placeholder || '';
+    const avatar = $('[data-preview-avatar]', panel);
+    if (avatar) {
+      avatar.dataset.shape = values.avatar_shape || 'circle';
+      if (values.avatar_url) {
+        avatar.classList.remove('jcb-hidden');
+        avatar.innerHTML = `<img src="${escapeHtml(values.avatar_url)}" alt="">`;
+      } else {
+        avatar.classList.add('jcb-hidden');
+        avatar.innerHTML = '';
+      }
+    }
+    const thumb = $('[data-avatar-thumb]', panel);
+    if (thumb) thumb.dataset.shape = values.avatar_shape || 'circle';
   };
 
   const applyDesignTheme = (themeId) => {
@@ -973,6 +1208,11 @@
     const themeButton = event.target.closest('[data-design-theme]');
     if (themeButton) applyDesignTheme(themeButton.dataset.designTheme);
 
+    if (event.target.matches('#jcb-meta-autofill')) autofillSummary();
+    if (event.target.matches('[data-apply-preset]')) applyPreset(event.target.closest('.jcb-panel'));
+    if (event.target.matches('[data-avatar-select]')) openMediaPicker(event.target.closest('.jcb-panel'));
+    if (event.target.matches('[data-avatar-remove]')) removeAvatar(event.target.closest('.jcb-panel'));
+
     if (event.target.matches('[data-save-settings]')) saveSettings(event.target);
     if (event.target.matches('[data-test-api]')) testApi(event.target);
     if (event.target.matches('[data-check-sync]')) checkSync(event.target);
@@ -984,21 +1224,30 @@
     }
   });
 
+  const isThemeField = (el) => {
+    const key = el.dataset?.setting || el.dataset?.colorHex;
+    if (!key) return false;
+    return designColorKeys.includes(key) || key === 'bubble_style' || el.matches('[data-color-hex]');
+  };
+
   document.addEventListener('input', (event) => {
     if (event.target.matches('#jcb-content-search')) renderContentList();
     const designPanel = event.target.closest('[data-panel="design"]');
     if (designPanel) {
-      if (event.target.matches('[data-setting], [data-color-hex]')) {
+      if (isThemeField(event.target)) {
         syncColorControl(event.target);
-        if (!event.target.matches('[data-design-theme-value]')) {
-          markCustomTheme(designPanel);
-        }
+        markCustomTheme(designPanel);
       }
       renderDesignPreview(designPanel);
     }
   });
 
   document.addEventListener('change', (event) => {
+    if (event.target.matches('[data-preset-select]')) {
+      const desc = event.target.closest('.jcb-panel')?.querySelector('[data-preset-description]');
+      if (desc) desc.textContent = presetDescription(event.target.value);
+    }
+
     const channelsPanel = event.target.closest('[data-panel="channels"]');
     if (channelsPanel) {
       if (event.target.matches('[data-visibility-user]')) {
@@ -1012,11 +1261,9 @@
 
     const designPanel = event.target.closest('[data-panel="design"]');
     if (designPanel) {
-      if (event.target.matches('[data-setting], [data-color-hex]')) {
+      if (isThemeField(event.target)) {
         syncColorControl(event.target);
-        if (!event.target.matches('[data-design-theme-value]')) {
-          markCustomTheme(designPanel);
-        }
+        markCustomTheme(designPanel);
       }
       renderDesignPreview(designPanel);
     }

@@ -298,3 +298,178 @@
   font-size: 13px !important;
   align-self: stretch !important;
 }
+
+/* ---- Message rows and avatars (v0.9.0) ---- */
+.jcb-chat-row {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+}
+
+.jcb-chat-row.user {
+  justify-content: flex-end !important;
+}
+
+.jcb-chat-row.assistant {
+  justify-content: flex-start !important;
+}
+
+.jcb-chat-row.system {
+  justify-content: stretch !important;
+}
+
+.jcb-chat-row .jcb-chat-message {
+  margin: 0 !important;
+}
+
+.jcb-chat-row.system .jcb-chat-message {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.jcb-chat-avatar,
+.jcb-chat-header-avatar {
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  display: inline-block !important;
+}
+
+.jcb-chat-avatar {
+  width: 30px !important;
+  height: 30px !important;
+  margin-bottom: 2px !important;
+}
+
+.jcb-chat-header-avatar {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.jcb-chat-avatar img,
+.jcb-chat-header-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+[data-shape="circle"] { border-radius: 50% !important; }
+[data-shape="rounded"] { border-radius: 12px !important; }
+[data-shape="squircle"] { border-radius: 30% !important; }
+[data-shape="speech"] { border-radius: 50% 50% 50% 6px !important; }
+
+/* ---- Launcher styles ---- */
+.jcb-chat-root[data-launcher-style="icon"] .jcb-chat-launcher,
+.jcb-chat-root[data-launcher-style="avatar"] .jcb-chat-launcher {
+  width: 60px !important;
+  height: 60px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+.jcb-chat-launcher svg {
+  display: block !important;
+}
+
+.jcb-chat-launcher-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* ---- Markdown formatting inside answers ---- */
+.jcb-chat-message a {
+  color: var(--jcb-chat-accent) !important;
+  text-decoration: underline !important;
+  word-break: break-word !important;
+}
+
+.jcb-chat-message.user a {
+  color: inherit !important;
+}
+
+.jcb-chat-message ul,
+.jcb-chat-message ol {
+  margin: 6px 0 !important;
+  padding-left: 20px !important;
+}
+
+.jcb-chat-message li {
+  margin: 2px 0 !important;
+}
+
+.jcb-chat-message strong {
+  font-weight: 700 !important;
+}
+
+.jcb-chat-message em {
+  font-style: italic !important;
+}
+
+.jcb-chat-message code {
+  background: rgba(0, 0, 0, 0.06) !important;
+  padding: 1px 5px !important;
+  border-radius: 6px !important;
+  font-size: 0.92em !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+
+/* ---- Quick reply chips ---- */
+.jcb-chat-quick-replies {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+}
+
+.jcb-chat-chip {
+  border: 1px solid var(--jcb-chat-accent) !important;
+  background: transparent !important;
+  color: var(--jcb-chat-accent) !important;
+  border-radius: 999px !important;
+  padding: 7px 12px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+}
+
+.jcb-chat-chip:hover,
+.jcb-chat-chip:focus {
+  background: color-mix(in srgb, var(--jcb-chat-accent) 12%, transparent) !important;
+}
+
+/* ---- Typing indicator ---- */
+.jcb-typing {
+  display: inline-flex !important;
+  gap: 4px !important;
+  align-items: center !important;
+}
+
+.jcb-typing i {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  opacity: 0.4 !important;
+  animation: jcb-typing-bounce 1.2s infinite ease-in-out !important;
+}
+
+.jcb-typing i:nth-child(2) { animation-delay: 0.15s !important; }
+.jcb-typing i:nth-child(3) { animation-delay: 0.3s !important; }
+
+@keyframes jcb-typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-4px); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jcb-typing i { animation: none !important; }
+}

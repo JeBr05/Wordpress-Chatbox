@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.8.0
+Stable tag: 0.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,21 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.0 =
+* Knowledge base editor now shows the page URL, a word count and an auto-fill summary button.
+* Summaries can be auto-filled from the SEO meta description (Yoast, Rank Math, AIO SEO, SEOPress, Genesis) or a generated excerpt.
+* Added an auto-generate summary on sync option per page when the summary is empty.
+* Added a Category field per page that is included in the synced knowledge base.
+* Added instruction presets, including a Website representative preset based on a strict knowledge base persona, plus Support and Sales presets, in English and Dutch.
+* Added contact email, phone and address fields that presets use to share how to reach you.
+* Added a profile picture (avatar) with circle, rounded, squircle and speech bubble shapes, shown in the header and next to answers.
+* Added launcher styles: text button, round icon button or avatar button, with selectable icons.
+* Added Markdown rendering in answers so links, bold text and lists are clickable and formatted.
+* Added quick reply suggestion chips under the welcome message.
+* Added a typing indicator animation.
+* Security: blocking of common offensive words is on by default with a built-in multilingual list.
+* Security: jailbreak detection now works in any language with a built-in pattern bank for Dutch, German, French, Spanish, Italian and Portuguese in addition to English.
 
 = 0.8.0 =
 * Rebuilt the Security tab into a clearer full security dashboard.

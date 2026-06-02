@@ -68,6 +68,80 @@ class JCB_Options {
 	}
 
 	/**
+	 * Run one-time data migrations when the stored option is from an older version.
+	 *
+	 * Hooked early so both the admin and the front end benefit. It only writes once
+	 * per version bump (guarded by the stored 'version'), so it is cheap to call on
+	 * every request.
+	 */
+	public static function maybe_upgrade(): void {
+		$stored = get_option( self::KEY, null );
+
+		// Fresh installs (no stored option yet) are handled by the activator and by
+		// defaults(), which already ship the new protections turned on.
+		if ( ! is_array( $stored ) ) {
+			return;
+		}
+
+		$version = isset( $stored['version'] ) ? (string) $stored['version'] : '0';
+		if ( version_compare( $version, '0.9.0', '>=' ) ) {
+			return;
+		}
+
+		// --- 0.9.0 migration -------------------------------------------------
+		// The site owner asked for offensive-word blocking and multilingual
+		// jailbreak detection to be on by default. Sites upgrading from 0.8.0
+		// kept their old stored values (for example blocked_words_enabled was
+		// false), which silently prevented the new protections from running.
+		// Enable the requested protections once here.
+		$stored['security_enabled']               = true;
+		$stored['blocked_words_enabled']          = true;
+		$stored['blocked_words_use_default']      = true;
+		if ( empty( $stored['blocked_words_action'] ) || 'warn' === $stored['blocked_words_action'] ) {
+			$stored['blocked_words_action'] = 'block';
+		}
+		$stored['auto_flag_enabled']              = true;
+		$stored['detect_jailbreak_enabled']       = true;
+		$stored['jailbreak_multilingual_enabled'] = true;
+
+		// Seed the website-representative preset into the Instructions field, but
+		// only when it has not been customised (empty or still a shipped default),
+		// so the owner's own text is never overwritten.
+		$language      = JCB_Language::normalize( (string) ( $stored['plugin_language'] ?? 'en' ) );
+		$current_instr = trim( (string) ( $stored['instructions'] ?? '' ) );
+		if ( '' === $current_instr || self::is_default_instructions( $current_instr ) ) {
+			$presets = JCB_Presets::all( $language, array_merge( self::defaults(), $stored ) );
+			foreach ( $presets as $preset ) {
+				if ( 'representative' === $preset['id'] ) {
+					$stored['instructions']       = $preset['instructions'];
+					$stored['instruction_preset'] = 'representative';
+					break;
+				}
+			}
+		}
+
+		$stored['version'] = '0.9.0';
+		update_option( self::KEY, $stored, false );
+	}
+
+	/**
+	 * Whether the given instructions text matches a shipped default (any language),
+	 * meaning it has not been customised by the site owner.
+	 *
+	 * @param string $instructions Trimmed instructions text.
+	 */
+	private static function is_default_instructions( string $instructions ): bool {
+		foreach ( array( 'en', 'nl', 'de', 'fr' ) as $lang ) {
+			if ( $instructions === trim( JCB_Language::text( 'instructions', $lang ) ) ) {
+				return true;
+			}
+		}
+		// The original 0.8.0 activator default (in case the language table changes).
+		$legacy_default = 'Answer questions using the selected website knowledge base. Be clear, helpful and honest. If the answer is not in the knowledge base, say that you do not know based on the available site content.';
+		return $instructions === $legacy_default;
+	}
+
+	/**
 	 * Get public options for front-end.
 	 */
 	public static function public_config(): array {

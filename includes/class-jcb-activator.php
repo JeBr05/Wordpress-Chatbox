@@ -116,6 +116,20 @@ class JCB_Activator {
 				'api_key_encrypted'         => '',
 				'replace_vector_store'      => false,
 			);
+
+			// Ship the website-representative preset as the starting instructions so
+			// the company-style persona is available out of the box. Falls back to the
+			// generic default if presets are unavailable for any reason.
+			if ( class_exists( 'JCB_Presets' ) ) {
+				$defaults['instruction_preset'] = 'representative';
+				foreach ( JCB_Presets::all( 'en', $defaults ) as $preset ) {
+					if ( 'representative' === $preset['id'] && ! empty( $preset['instructions'] ) ) {
+						$defaults['instructions'] = $preset['instructions'];
+						break;
+					}
+				}
+			}
+
 			add_option( 'jeroens_chatbox_options', $defaults, '', false );
 		}
 

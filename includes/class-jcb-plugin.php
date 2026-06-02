@@ -61,6 +61,7 @@ final class JCB_Plugin {
 	 * Register hooks.
 	 */
 	public function run(): void {
+		add_action( 'plugins_loaded', array( 'JCB_Options', 'maybe_upgrade' ) );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( 'JCB_Shortcode', 'register' ) );
 		add_action( 'admin_init', array( 'JCB_Options', 'register_settings' ) );

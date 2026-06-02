@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.0
+Stable tag: 0.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.1 =
+* Existing sites upgrading from 0.8.0 now automatically get the new protections enabled, since the old saved settings previously kept them switched off. On first load after the update, offensive-word blocking, the built-in multilingual word list, auto-flagging, jailbreak detection and multilingual jailbreak detection are all turned on once. Your own changes after that are respected.
+* New and upgraded sites are seeded with the Website representative preset as the starting Instructions (only when you have not customised the Instructions field), so the company-style persona is visible and active out of the box.
+* Version bump also refreshes the admin assets so the new preset selector and security options always appear after updating.
 
 = 0.9.0 =
 * Knowledge base editor now shows the page URL, a word count and an auto-fill summary button.

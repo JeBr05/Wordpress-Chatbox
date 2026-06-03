@@ -84,44 +84,87 @@ class JCB_Options {
 		}
 
 		$version = isset( $stored['version'] ) ? (string) $stored['version'] : '0';
-		if ( version_compare( $version, '0.9.0', '>=' ) ) {
+		if ( version_compare( $version, JCB_VERSION, '>=' ) ) {
 			return;
 		}
 
-		// --- 0.9.0 migration -------------------------------------------------
+		// --- 0.9.0 step ------------------------------------------------------
 		// The site owner asked for offensive-word blocking and multilingual
 		// jailbreak detection to be on by default. Sites upgrading from 0.8.0
 		// kept their old stored values (for example blocked_words_enabled was
 		// false), which silently prevented the new protections from running.
-		// Enable the requested protections once here.
-		$stored['security_enabled']               = true;
-		$stored['blocked_words_enabled']          = true;
-		$stored['blocked_words_use_default']      = true;
-		if ( empty( $stored['blocked_words_action'] ) || 'warn' === $stored['blocked_words_action'] ) {
-			$stored['blocked_words_action'] = 'block';
-		}
-		$stored['auto_flag_enabled']              = true;
-		$stored['detect_jailbreak_enabled']       = true;
-		$stored['jailbreak_multilingual_enabled'] = true;
+		if ( version_compare( $version, '0.9.0', '<' ) ) {
+			$stored['security_enabled']               = true;
+			$stored['blocked_words_enabled']          = true;
+			$stored['blocked_words_use_default']      = true;
+			if ( empty( $stored['blocked_words_action'] ) || 'warn' === $stored['blocked_words_action'] ) {
+				$stored['blocked_words_action'] = 'block';
+			}
+			$stored['auto_flag_enabled']              = true;
+			$stored['detect_jailbreak_enabled']       = true;
+			$stored['jailbreak_multilingual_enabled'] = true;
 
-		// Seed the website-representative preset into the Instructions field, but
-		// only when it has not been customised (empty or still a shipped default),
-		// so the owner's own text is never overwritten.
-		$language      = JCB_Language::normalize( (string) ( $stored['plugin_language'] ?? 'en' ) );
-		$current_instr = trim( (string) ( $stored['instructions'] ?? '' ) );
-		if ( '' === $current_instr || self::is_default_instructions( $current_instr ) ) {
-			$presets = JCB_Presets::all( $language, array_merge( self::defaults(), $stored ) );
-			foreach ( $presets as $preset ) {
-				if ( 'representative' === $preset['id'] ) {
-					$stored['instructions']       = $preset['instructions'];
-					$stored['instruction_preset'] = 'representative';
-					break;
-				}
+			// Seed the website-representative preset, but only when the Instructions
+			// field has not been customised (empty or a shipped default).
+			$current = trim( (string) ( $stored['instructions'] ?? '' ) );
+			if ( '' === $current || self::is_default_instructions( $current ) ) {
+				self::apply_representative_preset( $stored );
 			}
 		}
 
-		$stored['version'] = '0.9.0';
+		// --- 0.9.2 step ------------------------------------------------------
+		// The representative preset became much more detailed. Refresh it for sites
+		// that still have an auto-seeded (un-edited) copy of the older, shorter text,
+		// or an empty/default field. Hand-edited instructions are left untouched.
+		if ( version_compare( $version, '0.9.2', '<' ) ) {
+			$current = trim( (string) ( $stored['instructions'] ?? '' ) );
+			if ( '' === $current
+				|| self::is_default_instructions( $current )
+				|| self::matches_legacy_representative( $current, $stored ) ) {
+				self::apply_representative_preset( $stored );
+			}
+		}
+
+		$stored['version'] = JCB_VERSION;
 		update_option( self::KEY, $stored, false );
+	}
+
+	/**
+	 * Fill the Instructions field with the resolved website-representative preset.
+	 *
+	 * @param array $stored Stored options, passed by reference.
+	 */
+	private static function apply_representative_preset( array &$stored ): void {
+		$language = JCB_Language::normalize( (string) ( $stored['plugin_language'] ?? 'en' ) );
+		$presets  = JCB_Presets::all( $language, array_merge( self::defaults(), $stored ) );
+		foreach ( $presets as $preset ) {
+			if ( 'representative' === $preset['id'] && ! empty( $preset['instructions'] ) ) {
+				$stored['instructions']       = $preset['instructions'];
+				$stored['instruction_preset'] = 'representative';
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Whether the current instructions are a verbatim, un-edited copy of the older
+	 * auto-seeded representative preset (English or Dutch), resolved with current
+	 * tokens. Only a verbatim match returns true, so hand-edited text is never lost.
+	 *
+	 * @param string $current Trimmed current instructions.
+	 * @param array  $stored  Stored options.
+	 */
+	private static function matches_legacy_representative( string $current, array $stored ): bool {
+		if ( ! method_exists( 'JCB_Presets', 'legacy_representative' ) ) {
+			return false;
+		}
+		$options = array_merge( self::defaults(), $stored );
+		foreach ( array( 'en', 'nl' ) as $lang ) {
+			if ( $current === trim( JCB_Presets::legacy_representative( $lang, $options ) ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

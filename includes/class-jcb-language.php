@@ -460,7 +460,7 @@ class JCB_Language {
 			'use_default_word_list' => 'Block common offensive words automatically',
 			'use_default_word_list_help' => 'Adds a built-in multilingual profanity list on top of your own words.',
 			'jailbreak_multilingual' => 'Detect jailbreaks in any language',
-			'jailbreak_multilingual_help' => 'Adds a built-in pattern bank for Dutch, German, French, Spanish, Italian and Portuguese on top of the English patterns below.',
+			'jailbreak_multilingual_help' => 'Adds a built-in pattern bank for many languages (Dutch, German, French, Spanish, Italian, Portuguese, Chinese, Russian, Arabic, Japanese, Korean, Turkish, Polish and Hindi) on top of the English patterns below.',
 		);
 	}
 
@@ -821,7 +821,7 @@ class JCB_Language {
 			'use_default_word_list' => 'Veelvoorkomende scheldwoorden automatisch blokkeren',
 			'use_default_word_list_help' => 'Voegt een ingebouwde meertalige scheldwoordenlijst toe naast je eigen woorden.',
 			'jailbreak_multilingual' => 'Jailbreaks in elke taal detecteren',
-			'jailbreak_multilingual_help' => 'Voegt een ingebouwde patronenbank toe voor Nederlands, Duits, Frans, Spaans, Italiaans en Portugees naast de Engelse patronen hieronder.',
+			'jailbreak_multilingual_help' => 'Voegt een ingebouwde patronenbank toe voor veel talen (Nederlands, Duits, Frans, Spaans, Italiaans, Portugees, Chinees, Russisch, Arabisch, Japans, Koreaans, Turks, Pools en Hindi) naast de Engelse patronen hieronder.',
 		) );
 	}
 

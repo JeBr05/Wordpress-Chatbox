@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.1
+Stable tag: 0.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,12 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.2 =
+* The built-in jailbreak detection now covers many more languages by default, including Chinese, Russian, Arabic, Japanese, Korean, Turkish, Polish and Hindi, on top of the existing English, Dutch, German, French, Spanish, Italian and Portuguese.
+* Pattern matching is now multibyte aware so non-Latin scripts are detected reliably.
+* The Website representative preset is much more detailed and now mirrors a full strict knowledge-base persona (scope and off-topic limits, never reveal the source, first-person voice, required clickable Markdown links for every page, clickable phone and email, concise answers under ~400 characters, follow-up questions and a blog fallback).
+* Upgrading sites that still have the earlier, shorter auto-seeded preset are refreshed to the new detailed version automatically. Instructions you have edited yourself are never overwritten.
 
 = 0.9.1 =
 * Existing sites upgrading from 0.8.0 now automatically get the new protections enabled, since the old saved settings previously kept them switched off. On first load after the update, offensive-word blocking, the built-in multilingual word list, auto-flagging, jailbreak detection and multilingual jailbreak detection are all turned on once. Your own changes after that are respected.

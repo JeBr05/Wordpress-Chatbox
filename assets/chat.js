@@ -178,6 +178,7 @@
     root.style.setProperty('--jcb-chat-z-index', String(config.zIndex || 99999));
     root.dataset.position = config.position || 'right';
     root.dataset.bubbleStyle = config.bubbleStyle || 'soft';
+    root.dataset.avatarSize = config.avatarSize || 'medium';
 
     // Launcher contents based on the selected style.
     const launcherStyle = config.launcherStyle || 'label';

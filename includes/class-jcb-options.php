@@ -207,6 +207,7 @@ class JCB_Options {
 			'designTheme'              => $options['design_theme'],
 			'avatarUrl'                => esc_url_raw( (string) $options['avatar_url'] ),
 			'avatarShape'              => $options['avatar_shape'],
+			'avatarSize'               => $options['avatar_size'],
 			'showAvatarInHeader'       => (bool) $options['show_avatar_in_header'],
 			'showAvatarOnMessages'     => (bool) $options['show_avatar_on_messages'],
 			'launcherStyle'            => $options['launcher_style'],
@@ -246,6 +247,7 @@ class JCB_Options {
 			'design_theme'             => 'custom',
 			'avatar_url'               => '',
 			'avatar_shape'             => 'circle',
+			'avatar_size'              => 'medium',
 			'show_avatar_in_header'    => true,
 			'show_avatar_on_messages'  => true,
 			'launcher_style'           => 'label',
@@ -425,6 +427,10 @@ class JCB_Options {
 		if ( isset( $input['avatar_shape'] ) ) {
 			$avatar_shape = sanitize_key( (string) $input['avatar_shape'] );
 			$current['avatar_shape'] = in_array( $avatar_shape, array( 'circle', 'rounded', 'squircle', 'speech' ), true ) ? $avatar_shape : 'circle';
+		}
+		if ( isset( $input['avatar_size'] ) ) {
+			$avatar_size = sanitize_key( (string) $input['avatar_size'] );
+			$current['avatar_size'] = in_array( $avatar_size, array( 'small', 'medium', 'large' ), true ) ? $avatar_size : 'medium';
 		}
 		if ( isset( $input['launcher_style'] ) ) {
 			$launcher_style = sanitize_key( (string) $input['launcher_style'] );

@@ -337,9 +337,23 @@
 }
 
 .jcb-chat-avatar {
-  width: 30px !important;
-  height: 30px !important;
+  width: 44px !important;
+  height: 44px !important;
   margin-bottom: 2px !important;
+}
+
+/* In-conversation avatar size (Design tab control) */
+.jcb-chat-root[data-avatar-size="small"] .jcb-chat-avatar {
+  width: 34px !important;
+  height: 34px !important;
+}
+.jcb-chat-root[data-avatar-size="medium"] .jcb-chat-avatar {
+  width: 44px !important;
+  height: 44px !important;
+}
+.jcb-chat-root[data-avatar-size="large"] .jcb-chat-avatar {
+  width: 60px !important;
+  height: 60px !important;
 }
 
 .jcb-chat-header-avatar {

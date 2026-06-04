@@ -551,10 +551,16 @@
     { value: 'speech', label: t('shape_speech', 'Speech bubble') },
   ]);
 
+  const avatarSizeSelect = () => securitySelect(t('avatar_size', 'Avatar size in chat'), 'avatar_size', [
+    { value: 'small', label: t('size_small', 'Small') },
+    { value: 'medium', label: t('size_medium', 'Medium') },
+    { value: 'large', label: t('size_large', 'Large') },
+  ]);
+
   const launcherStyleSelect = () => securitySelect(t('launcher_style', 'Launcher style'), 'launcher_style', [
     { value: 'label', label: t('launcher_style_label', 'Text button') },
     { value: 'icon', label: t('launcher_style_icon', 'Round icon button') },
-    { value: 'avatar', label: t('launcher_style_avatar', 'Avatar button') },
+    { value: 'avatar', label: t('launcher_style_avatar', 'Logo / avatar button') },
   ]);
 
   const launcherIconSelect = () => securitySelect(t('launcher_icon', 'Launcher icon'), 'launcher_icon', [
@@ -773,9 +779,11 @@
             <h3>${escapeHtml(t('avatar_section', 'Profile picture and launcher'))}</h3>
             ${avatarPicker()}
             ${avatarShapeSelect()}
+            ${avatarSizeSelect()}
             ${checkbox(t('show_avatar_in_header', 'Show avatar in the chat header'), 'show_avatar_in_header')}
             ${checkbox(t('show_avatar_on_messages', 'Show avatar next to answers'), 'show_avatar_on_messages')}
             ${launcherStyleSelect()}
+            <p class="jcb-meta-hint">${escapeHtml(t('launcher_style_help', 'Choose "Logo / avatar button" to use the profile picture above as the round chat button.'))}</p>
             ${launcherIconSelect()}
             <h3>${escapeHtml(t('conversation_extras', 'Conversation extras'))}</h3>
             ${checkbox(t('enable_markdown', 'Render Markdown links and formatting in answers'), 'enable_markdown', t('enable_markdown_help', 'Turns [text](link), bold and lists into clickable, formatted output.'))}

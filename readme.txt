@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.2
+Stable tag: 0.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,10 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.3 =
+* Added an "Avatar size in chat" option (Small, Medium, Large) on the Design tab; the in-conversation avatar is now larger by default and adjustable.
+* Clarified the launcher option: choosing "Logo / avatar button" uses your uploaded profile picture as the round chat button, with a short hint in the Design tab.
 
 = 0.9.2 =
 * The built-in jailbreak detection now covers many more languages by default, including Chinese, Russian, Arabic, Japanese, Korean, Turkish, Polish and Hindi, on top of the existing English, Dutch, German, French, Spanish, Italian and Portuguese.

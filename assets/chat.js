@@ -179,6 +179,7 @@
     root.dataset.position = config.position || 'right';
     root.dataset.bubbleStyle = config.bubbleStyle || 'soft';
     root.dataset.avatarSize = config.avatarSize || 'medium';
+    root.dataset.launcherSize = config.launcherSize || 'medium';
 
     // Launcher contents based on the selected style.
     const launcherStyle = config.launcherStyle || 'label';

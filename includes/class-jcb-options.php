@@ -212,6 +212,7 @@ class JCB_Options {
 			'showAvatarOnMessages'     => (bool) $options['show_avatar_on_messages'],
 			'launcherStyle'            => $options['launcher_style'],
 			'launcherIcon'             => $options['launcher_icon'],
+			'launcherSize'             => $options['launcher_size'],
 			'enableMarkdown'           => (bool) $options['enable_markdown'],
 			'quickReplies'             => self::quick_replies_list( (string) $options['quick_replies'] ),
 			'position'                 => $options['launcher_position'],
@@ -252,6 +253,7 @@ class JCB_Options {
 			'show_avatar_on_messages'  => true,
 			'launcher_style'           => 'label',
 			'launcher_icon'            => 'chat',
+			'launcher_size'            => 'medium',
 			'enable_markdown'          => true,
 			'quick_replies'            => '',
 			'contact_email'            => '',
@@ -439,6 +441,10 @@ class JCB_Options {
 		if ( isset( $input['launcher_icon'] ) ) {
 			$launcher_icon = sanitize_key( (string) $input['launcher_icon'] );
 			$current['launcher_icon'] = in_array( $launcher_icon, array( 'chat', 'question', 'sparkle', 'bot' ), true ) ? $launcher_icon : 'chat';
+		}
+		if ( isset( $input['launcher_size'] ) ) {
+			$launcher_size = sanitize_key( (string) $input['launcher_size'] );
+			$current['launcher_size'] = in_array( $launcher_size, array( 'small', 'medium', 'large' ), true ) ? $launcher_size : 'medium';
 		}
 		if ( isset( $input['quick_replies'] ) ) {
 			$current['quick_replies'] = self::sanitize_quick_replies( (string) $input['quick_replies'] );

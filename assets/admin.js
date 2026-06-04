@@ -570,6 +570,12 @@
     { value: 'bot', label: t('icon_bot', 'Robot') },
   ]);
 
+  const launcherSizeSelect = () => securitySelect(t('launcher_size', 'Launcher button size'), 'launcher_size', [
+    { value: 'small', label: t('size_small', 'Small') },
+    { value: 'medium', label: t('size_medium', 'Medium') },
+    { value: 'large', label: t('size_large', 'Large') },
+  ]);
+
   const avatarPicker = () => {
     const url = state.settings.avatar_url || '';
     return `
@@ -785,6 +791,8 @@
             ${launcherStyleSelect()}
             <p class="jcb-meta-hint">${escapeHtml(t('launcher_style_help', 'Choose "Logo / avatar button" to use the profile picture above as the round chat button.'))}</p>
             ${launcherIconSelect()}
+            ${launcherSizeSelect()}
+            <p class="jcb-meta-hint">${escapeHtml(t('launcher_size_help', 'Sets how big the round chat button in the corner is. Applies to the icon and logo styles.'))}</p>
             <h3>${escapeHtml(t('conversation_extras', 'Conversation extras'))}</h3>
             ${checkbox(t('enable_markdown', 'Render Markdown links and formatting in answers'), 'enable_markdown', t('enable_markdown_help', 'Turns [text](link), bold and lists into clickable, formatted output.'))}
             ${textarea(t('quick_replies', 'Quick reply suggestions'), 'quick_replies', 5, t('quick_replies_help', 'One per line. Shown as tappable chips under the welcome message. Up to 8.'))}

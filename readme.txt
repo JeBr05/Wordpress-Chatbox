@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.3
+Stable tag: 0.9.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.4 =
+* Added a "Launcher button size" option (Small, Medium, Large) on the Design tab for the round chat button in the corner. The default button is also slightly larger, and the icon scales with it.
 
 = 0.9.3 =
 * Added an "Avatar size in chat" option (Small, Medium, Large) on the Design tab; the in-conversation avatar is now larger by default and adjustable.

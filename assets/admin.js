@@ -972,6 +972,12 @@
             ${saveButton()}
           </section>
           <section class="jcb-card">
+            <h2>${escapeHtml(t('cost_controls', 'Cost controls'))}</h2>
+            ${field(t('daily_token_budget', 'Daily token budget'), 'daily_token_budget', 'number', t('daily_token_budget_help', 'Set 0 to disable the daily budget cap.'))}
+            <p class="jcb-meta-hint">${escapeHtml(t('daily_token_budget_note', 'This is the combined input + output tokens the chatbox may use per day across all visitors. When reached, visitors see a friendly "try again later" message until midnight (UTC).'))}</p>
+            ${saveButton()}
+          </section>
+          <section class="jcb-card">
             <h2>${escapeHtml(t('advanced_settings', 'Advanced settings'))}</h2>
             ${checkbox(t('debug_mode', 'Debug mode'), 'debug_mode')}
             ${checkbox(t('replace_vector_store', 'Replace old vector store on every sync'), 'replace_vector_store')}

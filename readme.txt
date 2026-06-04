@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.5
+Stable tag: 0.9.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.6 =
+* Added a "Cost controls" section on the OpenAI API tab with the Daily token budget field, so the per-day token cap can now be raised, lowered or disabled (set 0) from the admin. Previously this limit existed but had no setting in the interface.
 
 = 0.9.5 =
 * The floating chatbox now appears automatically on the website once the front end is enabled and a visibility audience is selected; auto embed is on by default.

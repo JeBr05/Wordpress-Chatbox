@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.6
+Stable tag: 0.9.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.7 =
+* Fixed stray citation markers (such as the file_search references the AI adds inside answers) appearing in chatbox replies. These are now stripped from the answer text, including mid-sentence and truncated markers, while normal Markdown links are kept intact.
 
 = 0.9.6 =
 * Added a "Cost controls" section on the OpenAI API tab with the Daily token budget field, so the per-day token cap can now be raised, lowered or disabled (set 0) from the admin. Previously this limit existed but had no setting in the interface.

@@ -180,12 +180,10 @@ class JCB_OpenAI_Client {
 	 * @param array $response Response data.
 	 */
 	public static function output_text( array $response ): string {
-		if ( isset( $response['output_text'] ) && is_string( $response['output_text'] ) ) {
-			return trim( $response['output_text'] );
-		}
-
 		$text = '';
-		if ( isset( $response['output'] ) && is_array( $response['output'] ) ) {
+		if ( isset( $response['output_text'] ) && is_string( $response['output_text'] ) ) {
+			$text = $response['output_text'];
+		} elseif ( isset( $response['output'] ) && is_array( $response['output'] ) ) {
 			foreach ( $response['output'] as $item ) {
 				if ( isset( $item['content'] ) && is_array( $item['content'] ) ) {
 					foreach ( $item['content'] as $content ) {
@@ -196,6 +194,27 @@ class JCB_OpenAI_Client {
 				}
 			}
 		}
+		return self::strip_citations( trim( $text ) );
+	}
+
+	/**
+	 * Remove OpenAI file_search citation markers from answer text.
+	 *
+	 * The Responses API embeds inline citation markers such as 【9:8†filename】
+	 * in the output text. They are meaningless to visitors, so strip them and
+	 * tidy up any leftover whitespace.
+	 *
+	 * @param string $text Raw answer text.
+	 */
+	private static function strip_citations( string $text ): string {
+		// Well-formed markers, e.g. 【9:8†jcb-2392-some-page】.
+		$text = (string) preg_replace( '/【[^【】]*】/u', '', $text );
+		// Stray or truncated marker at the end of the text.
+		$text = (string) preg_replace( '/【[^【】]*$/u', '', $text );
+		// Collapse leftover spaces and tidy spacing before line breaks.
+		$text = (string) preg_replace( '/[ \t]{2,}/', ' ', $text );
+		$text = (string) preg_replace( '/[ \t]+\n/', "\n", $text );
+		$text = (string) preg_replace( '/[ \t]+([.,!?;:])/u', '$1', $text );
 		return trim( $text );
 	}
 

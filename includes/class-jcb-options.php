@@ -125,6 +125,14 @@ class JCB_Options {
 			}
 		}
 
+		// --- 0.9.5 step ------------------------------------------------------
+		// Selecting a visibility audience now shows the floating chatbox without a
+		// second toggle, so enable auto embed once for existing sites. The site
+		// owner can still turn it off afterwards (the step only runs once).
+		if ( version_compare( $version, '0.9.5', '<' ) ) {
+			$stored['auto_embed'] = true;
+		}
+
 		$stored['version'] = JCB_VERSION;
 		update_option( self::KEY, $stored, false );
 	}
@@ -265,7 +273,7 @@ class JCB_Options {
 			'frontend_enabled'         => true,
 			'visibility_mode'          => 'everyone',
 			'visibility_user_ids'      => '',
-			'auto_embed'               => false,
+			'auto_embed'               => true,
 			'start_open'               => false,
 			'show_on_home'             => true,
 			'show_on_pages'            => true,

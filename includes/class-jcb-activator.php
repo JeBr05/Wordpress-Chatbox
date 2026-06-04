@@ -82,7 +82,7 @@ class JCB_Activator {
 				'launcher_position'         => 'right',
 				'launcher_label'            => 'Chat',
 				'frontend_enabled'          => true,
-				'auto_embed'                => false,
+				'auto_embed'                => true,
 				'start_open'                => false,
 				'show_on_home'              => true,
 				'show_on_pages'             => true,

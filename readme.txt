@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.4
+Stable tag: 0.9.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,10 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.5 =
+* The floating chatbox now appears automatically on the website once the front end is enabled and a visibility audience is selected; auto embed is on by default.
+* Existing sites have auto embed switched on once during this update so the chatbox becomes visible without extra steps. You can still turn it off and place the shortcode manually instead.
 
 = 0.9.4 =
 * Added a "Launcher button size" option (Small, Medium, Large) on the Design tab for the round chat button in the corner. The default button is also slightly larger, and the icon scales with it.

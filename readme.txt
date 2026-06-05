@@ -4,7 +4,7 @@ Tags: chatbox, ai, openai, support, knowledge base, multilingual
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.9.7
+Stable tag: 0.9.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ Open Channels. Enable front end display. Then either enable auto embed or place 
 No. The API key is stored in WordPress and used server side.
 
 == Changelog ==
+
+= 0.9.8 =
+* The "Open the chatbox by default" option is now split into two separate toggles: one for desktop and one for mobile (Website visibility tab). Devices narrower than 768px count as mobile, and the choice is made in the browser so it works correctly even with page caching. Your previous setting is carried over to both.
 
 = 0.9.7 =
 * Fixed stray citation markers (such as the file_search references the AI adds inside answers) appearing in chatbox replies. These are now stripped from the answer text, including mid-sentence and truncated markers, while normal Markdown links are kept intact.

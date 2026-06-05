@@ -723,7 +723,9 @@
               <p>${escapeHtml(t('selected_test_users_help', 'These users must be logged in before they can see the chatbox.'))}</p>
               ${visibilityUserPicker()}
             </div>
-            ${checkbox(t('start_open', 'Open the chatbox by default'), 'start_open')}
+            ${checkbox(t('start_open_desktop', 'Open the chatbox by default on desktop'), 'start_open_desktop')}
+            ${checkbox(t('start_open_mobile', 'Open the chatbox by default on mobile'), 'start_open_mobile')}
+            <p class="jcb-meta-hint">${escapeHtml(t('start_open_help', 'Devices narrower than 768px count as mobile. Auto-opening on mobile can feel intrusive on small screens.'))}</p>
             ${checkbox(t('show_on_mobile', 'Show on mobile'), 'show_on_mobile')}
             ${field(t('launcher_button_text', 'Launcher button text'), 'launcher_label')}
             ${field(t('stacking_order', 'Stacking order'), 'z_index', 'number', t('stacking_order_help', 'Raise this if another plugin or theme element covers the chatbox.'))}

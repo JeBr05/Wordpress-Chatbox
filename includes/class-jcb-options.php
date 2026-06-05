@@ -133,6 +133,19 @@ class JCB_Options {
 			$stored['auto_embed'] = true;
 		}
 
+		// --- 0.9.8 step ------------------------------------------------------
+		// "Open by default" is now split into separate desktop and mobile toggles.
+		// Seed both from the previous single setting so behaviour is preserved.
+		if ( version_compare( $version, '0.9.8', '<' ) ) {
+			$legacy_open = ! empty( $stored['start_open'] );
+			if ( ! isset( $stored['start_open_desktop'] ) ) {
+				$stored['start_open_desktop'] = $legacy_open;
+			}
+			if ( ! isset( $stored['start_open_mobile'] ) ) {
+				$stored['start_open_mobile'] = $legacy_open;
+			}
+		}
+
 		$stored['version'] = JCB_VERSION;
 		update_option( self::KEY, $stored, false );
 	}
@@ -226,6 +239,8 @@ class JCB_Options {
 			'position'                 => $options['launcher_position'],
 			'launcherLabel'  => $options['launcher_label'],
 			'startOpen'      => (bool) $options['start_open'],
+			'startOpenDesktop' => (bool) ( $options['start_open_desktop'] ?? $options['start_open'] ?? false ),
+			'startOpenMobile'  => (bool) ( $options['start_open_mobile'] ?? $options['start_open'] ?? false ),
 			'zIndex'         => (int) $options['z_index'],
 			'apiUrl'         => esc_url_raw( rest_url( JCB_REST_NAMESPACE . '/chat' ) ),
 			'feedbackUrl'    => esc_url_raw( rest_url( JCB_REST_NAMESPACE . '/feedback' ) ),
@@ -275,6 +290,8 @@ class JCB_Options {
 			'visibility_user_ids'      => '',
 			'auto_embed'               => true,
 			'start_open'               => false,
+			'start_open_desktop'       => false,
+			'start_open_mobile'        => false,
 			'show_on_home'             => true,
 			'show_on_pages'            => true,
 			'show_on_posts'            => true,
@@ -575,7 +592,7 @@ class JCB_Options {
 			$current['last_file_count'] = absint( $input['last_file_count'] );
 		}
 
-		$bool_keys = array( 'frontend_enabled', 'auto_embed', 'start_open', 'show_on_home', 'show_on_pages', 'show_on_posts', 'show_on_archives', 'show_on_mobile', 'enable_file_search', 'include_sources', 'session_context_enabled', 'log_conversations', 'redact_personal_data', 'security_enabled', 'rate_limit_enabled', 'message_length_enabled', 'blocked_words_enabled', 'blocked_words_use_default', 'ip_blocklist_enabled', 'auto_flag_enabled', 'detect_jailbreak_enabled', 'jailbreak_multilingual_enabled', 'detect_abuse_enabled', 'code_injection_enabled', 'detect_content_enabled', 'detect_behavior_enabled', 'show_avatar_in_header', 'show_avatar_on_messages', 'enable_markdown', 'debug_mode', 'delete_data_on_uninstall', 'replace_vector_store' );
+		$bool_keys = array( 'frontend_enabled', 'auto_embed', 'start_open', 'start_open_desktop', 'start_open_mobile', 'show_on_home', 'show_on_pages', 'show_on_posts', 'show_on_archives', 'show_on_mobile', 'enable_file_search', 'include_sources', 'session_context_enabled', 'log_conversations', 'redact_personal_data', 'security_enabled', 'rate_limit_enabled', 'message_length_enabled', 'blocked_words_enabled', 'blocked_words_use_default', 'ip_blocklist_enabled', 'auto_flag_enabled', 'detect_jailbreak_enabled', 'jailbreak_multilingual_enabled', 'detect_abuse_enabled', 'code_injection_enabled', 'detect_content_enabled', 'detect_behavior_enabled', 'show_avatar_in_header', 'show_avatar_on_messages', 'enable_markdown', 'debug_mode', 'delete_data_on_uninstall', 'replace_vector_store' );
 		foreach ( $bool_keys as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$current[ $key ] = JCB_Sanitizer::bool( $input[ $key ] );

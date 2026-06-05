@@ -241,7 +241,12 @@
       return bubble;
     };
 
-    if (config.startOpen) {
+    // Open by default per device (decided in the browser so it is cache-safe).
+    const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
+    const startOpen = isMobileViewport
+      ? (config.startOpenMobile ?? config.startOpen)
+      : (config.startOpenDesktop ?? config.startOpen);
+    if (startOpen) {
       windowNode.hidden = false;
     }
 
